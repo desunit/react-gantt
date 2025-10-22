@@ -1,0 +1,18 @@
+.wx-links.wx-dkx3NwEn {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.wx-line.wx-dkx3NwEn {
+  user-select: auto;
+  pointer-events: stroke;
+  position: relative;
+  cursor: pointer;
+  stroke: var(--wx-gantt-link-color);
+  stroke-width: 2;
+  z-index: 0;
+  fill: transparent;
+}

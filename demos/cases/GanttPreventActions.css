@@ -1,0 +1,38 @@
+.rows.wx-RPSbwjNq {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.bar.wx-RPSbwjNq {
+  display: flex;
+  height: 60px;
+  align-items: end;
+  font-family: var(--wx-font-family);
+  font-size: var(--wx-font-size);
+  padding-top: 12px;
+  --wx-label-width: 130px;
+}
+
+.bar.wx-RPSbwjNq:first-child {
+  margin-left: 10px;
+}
+
+.gantt.wx-RPSbwjNq {
+  height: 100%;
+  position: relative;
+  border-top: var(--wx-gantt-border);
+  overflow: hidden;
+}
+
+.gantt.wx-RPSbwjNq.hide-progress > .wx-gantt .wx-bar .wx-progress-marker {
+  display: none;
+}
+.gantt.wx-RPSbwjNq.hide-links > .wx-gantt .wx-bar .wx-link {
+  display: none;
+}
+.gantt.wx-RPSbwjNq.hide-drag > .wx-gantt .wx-bar {
+  cursor: pointer !important;
+}
