@@ -1,6 +1,6 @@
 {
   "name": "@svar-ui/react-gantt",
-  "version": "2.3.3",
+  "version": "2.3.4",
   "description": "A customizable, high-performance React Gantt chart component for building project timelines.",
   "productTag": "gantt",
   "type": "module",
@@ -50,7 +50,8 @@
     "dist",
     "types",
     "package.json",
-    "dist-full/index.css"
+    "dist-full/index.css",
+    "whatsnew.md"
   ],
   "peerDependencies": {
     "react": ">=18",

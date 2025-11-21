@@ -8,11 +8,9 @@ function TimeScale(props) {
 
   const api = useContext(storeContext);
   const scales = useStore(api, "_scales");
-  const scrollLeft = useStore(api, "scrollLeft");
 
   const containerStyle = {
     width: `${(scales && scales.width) != null ? scales.width : 0}px`,
-    left: `${-(scrollLeft != null ? scrollLeft : 0)}px`,
   };
 
   return (

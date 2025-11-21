@@ -13,6 +13,7 @@ import { hotkeys } from '@svar-ui/grid-store';
 import storeContext from '../../context';
 import { useStore, useStoreWithCounter } from '@svar-ui/lib-react';
 import './Chart.css';
+import TimeScales from '../TimeScale.jsx';
 
 function Chart(props) {
   const {
@@ -37,17 +38,9 @@ function Chart(props) {
   const zoom = useStore(api, "zoom");
 
   const [chartHeight, setChartHeight] = useState();
-  const [scrollLeft, setScrollLeft] = useState();
-  const [scrollTop, setScrollTop] = useState();
   const chartRef = useRef(null);
 
-  const extraRows = 1;
-  useEffect(() => {
-    setScrollLeft(rScrollLeft);
-    setScrollTop(rScrollTop);
-  }, [rScrollLeft, rScrollTop]);
-
-
+  const extraRows = 1 + (scales?.rows?.length || 0);
   const selectStyle = useMemo(() => {
     const t = [];
     if (selected && selected.length && cellHeight) {
@@ -58,10 +51,6 @@ function Chart(props) {
     return t;
   }, [selectedCounter, cellHeight]);
 
-  useEffect(() => {
-    dataRequest();
-  }, [chartHeight]);
-
   const chartGridHeight = useMemo(
     () => Math.max(chartHeight || 0, fullHeight),
     [chartHeight, fullHeight],
@@ -70,25 +59,21 @@ function Chart(props) {
   useEffect(() => {
     const el = chartRef.current;
     if (!el) return;
-    if (typeof scrollTop === 'number') el.scrollTop = scrollTop;
-    if (typeof scrollLeft === 'number') el.scrollLeft = scrollLeft;
-    if (typeof scrollTop === 'number' && scrollTop !== el.scrollTop)
-      setScroll({ top: true });
-    if (typeof scrollLeft === 'number' && scrollLeft !== el.scrollLeft)
-      setScroll({ left: true });
-  }, [scrollTop, scrollLeft]);
+
+    if (typeof rScrollTop === 'number') {
+      el.scrollTop = rScrollTop;
+    }
+  }, [rScrollTop]);
 
   const onScroll = () => {
-    const scroll = { left: true, top: true };
+    const scroll = { left: true };
     setScroll(scroll);
-    dataRequest();
   };
 
   function setScroll(scroll) {
     const el = chartRef.current;
     if (!el) return;
     const pos = {};
-    if (scroll.top) pos.top = el.scrollTop;
     if (scroll.left) pos.left = el.scrollLeft;
     api.exec('scroll-chart', pos);
   }
@@ -108,6 +93,10 @@ function Chart(props) {
     });
   }
 
+  useEffect(() => {
+    dataRequest();
+  }, [chartHeight, rScrollTop, rScrollLeft]);
+
   const showTask = useCallback(
     (value) => {
       if (!value) return;
@@ -119,14 +108,16 @@ function Chart(props) {
       if (!el) return;
       const { clientWidth } = el;
       const task = api.getTask(id);
-      if (task.$x + task.$w < (scrollLeft || 0)) {
-        setScrollLeft(task.$x - (cellWidth || 0));
-      } else if (task.$x >= clientWidth + (scrollLeft || 0)) {
+      if (task.$x + task.$w < el.scrollLeft) {
+        api.exec('scroll-chart', { left: task.$x - (cellWidth || 0) });
+        el.scrollLeft = task.$x - (cellWidth || 0)
+      } else if (task.$x >= clientWidth + el.scrollLeft) {
         const width = clientWidth < task.$w ? cellWidth || 0 : task.$w;
-        setScrollLeft(task.$x - clientWidth + width);
+        api.exec('scroll-chart', { left: task.$x - clientWidth + width });
+        el.scrollLeft = task.$x - clientWidth + width;
       }
     },
-    [api, scrollLeft, cellWidth],
+    [api, cellWidth, rScrollLeft],
   );
 
   useEffect(() => {
@@ -165,10 +156,10 @@ function Chart(props) {
       : null;
   }, [scales, highlightTime]);
 
-  function handleHotkey(ev) {
+  const handleHotkey = useCallback((ev) => {
     ev.eventSource = 'chart';
     api.exec('hotkey', ev);
-  }
+  }, [api]);
 
   useEffect(() => {
     const el = chartRef.current;
@@ -182,10 +173,13 @@ function Chart(props) {
     };
   }, [chartRef.current]);
 
+  const cleanupRef = useRef(null);
+
   useEffect(() => {
     const el = chartRef.current;
     if (!el) return;
-    const cleanup = hotkeys(el, {
+    if (cleanupRef.current) return;
+    cleanupRef.current = hotkeys(el, {
       keys: {
         arrowup: true,
         arrowdown: true,
@@ -193,10 +187,11 @@ function Chart(props) {
       exec: (v) => handleHotkey(v),
     });
     return () => {
-      if (typeof cleanup === 'function') cleanup();
+      cleanupRef.current?.destroy();
+      cleanupRef.current = null;
     };
-  }, [chartRef.current]);
-  
+  }, []);
+
   useEffect(() => {
     const node = chartRef.current;
     if (!node) return;
@@ -215,6 +210,7 @@ function Chart(props) {
       ref={chartRef}
       onScroll={onScroll}
     >
+      <TimeScales highlightTime={highlightTime} scales={scales} />  
       {markers && markers.length ? (
         <div
           className="wx-mR7v2Xag wx-markers"
@@ -260,15 +256,15 @@ function Chart(props) {
 
         {selected && selected.length
           ? selected.map((obj, index) =>
-              obj.$y ? (
-                <div
-                  key={obj.id}
-                  className="wx-mR7v2Xag wx-selected"
-                  data-id={obj.id}
-                  style={selectStyle[index]}
-                ></div>
-              ) : null,
-            )
+            obj.$y ? (
+              <div
+                key={obj.id}
+                className="wx-mR7v2Xag wx-selected"
+                data-id={obj.id}
+                style={selectStyle[index]}
+              ></div>
+            ) : null,
+          )
           : null}
 
         <Links />

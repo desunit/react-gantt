@@ -1,7 +1,9 @@
 .wx-scale.wx-ZkvhDKir {
-  position: relative;
+  position: sticky;
+  top: 0;
+  background-color: var(--wx-background);
   box-shadow: var(--wx-timescale-shadow);
-  z-index: 1;
+  z-index: 5;
 }
 
 .wx-row.wx-ZkvhDKir,

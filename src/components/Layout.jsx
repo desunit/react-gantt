@@ -7,7 +7,6 @@ import {
   useContext,
 } from 'react';
 import { hotkeys } from '@svar-ui/grid-store';
-import TimeScales from './TimeScale.jsx';
 import Grid from './grid/Grid.jsx';
 import Chart from './chart/Chart.jsx';
 import Resizer from './Resizer.jsx';
@@ -31,9 +30,7 @@ function Layout(props) {
   const rScales = useStore(api, "_scales");
   const rCellHeight = useStore(api, "cellHeight");
   const rColumns = useStore(api, "columns");
-  const scrollTop = useStore(api, "scrollTop");
   const rScrollTask = useStore(api, "_scrollTask");
-
   const [compactMode, setCompactMode] = useState(false);
   let [gridWidth, setGridWidth] = useState(0);
   const [ganttWidth, setGanttWidth] = useState(undefined);
@@ -131,20 +128,13 @@ function Layout(props) {
   const ganttDivRef = useRef(null);
   const pseudoRowsRef = useRef(null);
 
-  const syncScroll = useCallback(() => {
-    const el = ganttDivRef.current;
-    if (el && scrollTop !== el.scrollTop) el.scrollTop = scrollTop;
-  }, [scrollTop]);
-
-  useEffect(() => {
-    syncScroll();
-  }, [scrollTop, syncScroll]);
-
   const onScroll = useCallback(() => {
     const el = ganttDivRef.current;
-    api.exec('scroll-chart', {
-      top: el ? el.scrollTop : 0,
-    });
+    if (el) {
+      api.exec('scroll-chart', {
+        top: el.scrollTop,
+      });
+    }
   }, [api]);
 
   const latest = useRef({
@@ -193,6 +183,7 @@ function Layout(props) {
         }
         if (top !== null) {
           api.exec('scroll-chart', { top: Math.max(top, 0) });
+          ganttDivRef.current.scrollTop = Math.max(top, 0);
         }
       }
     },
@@ -200,7 +191,7 @@ function Layout(props) {
   );
 
   useEffect(() => {
-    scrollToTask(rScrollTask);
+      scrollToTask(rScrollTask);
   }, [rScrollTask]);
 
   useEffect(() => {
@@ -229,11 +220,14 @@ function Layout(props) {
   }, [pseudoRowsRef.current]);
 
   const layoutRef = useRef(null);
+  const cleanupRef = useRef(null);
+
   useEffect(() => {
+    if (cleanupRef.current) return;
     const node = layoutRef.current;
     if (!node) return;
 
-    const cleanup = hotkeys(node, {
+    cleanupRef.current = hotkeys(node, {
       keys: {
         'ctrl+c': true,
         'ctrl+v': true,
@@ -246,9 +240,11 @@ function Layout(props) {
       },
     });
 
-   
-    return cleanup.destroy;
-  }, [api]);
+    return () => {
+      cleanupRef.current?.destroy();
+      cleanupRef.current = null;
+    };
+  }, []);
 
   return (
     <div className="wx-jlbQoHOz wx-gantt" ref={ganttDivRef} onScroll={onScroll}>
@@ -289,8 +285,6 @@ function Layout(props) {
             ) : null}
 
             <div className="wx-jlbQoHOz wx-content" ref={chartRef}>
-              <TimeScales highlightTime={highlightTime} />
-
               <Chart
                 readonly={readonly}
                 fullWidth={fullWidth}

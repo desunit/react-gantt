@@ -18,14 +18,14 @@ function Bars(props) {
 
   const api = useContext(storeContext);
 
-  const [rTasksValue, rTasksCounter] = useStoreWithCounter(api,"_tasks");
-  const [rLinksValue, rLinksCounter] = useStoreWithCounter(api,"_links");
-  const areaValue = useStore(api,"area");
-  const scalesValue = useStore(api,"_scales");
-  const taskTypesValue = useStore(api,"taskTypes");
-  const baselinesValue = useStore(api,"baselines");
-  const selectedValue = useStore(api,"_selected");
-  const scrollTaskStore = useStore(api,"_scrollTask" );
+  const [rTasksValue, rTasksCounter] = useStoreWithCounter(api, "_tasks");
+  const [rLinksValue, rLinksCounter] = useStoreWithCounter(api, "_links");
+  const areaValue = useStore(api, "area");
+  const scalesValue = useStore(api, "_scales");
+  const taskTypesValue = useStore(api, "taskTypes");
+  const baselinesValue = useStore(api, "baselines");
+  const selectedValue = useStore(api, "_selected");
+  const scrollTaskStore = useStore(api, "_scrollTask");
 
   const tasks = useMemo(() => {
     if (!areaValue || !Array.isArray(rTasksValue)) return [];
@@ -66,21 +66,16 @@ function Bars(props) {
   }, [hasFocus, selectedValue]);
 
   useEffect(() => {
-    if (!scrollTaskStore || typeof scrollTaskStore.subscribe !== 'function')
+    if (!scrollTaskStore)
       return;
-    const unsub = scrollTaskStore.subscribe((value) => {
-      if (hasFocus && value) {
-        const { id } = value;
-        const node = containerRef.current?.querySelector(
-          `.wx-bar[data-id='${id}']`,
-        );
-        if (node) node.focus();
-      }
-    });
-    return () => {
-      if (unsub) unsub();
-    };
-  }, [scrollTaskStore, hasFocus]);
+    if (hasFocus && scrollTaskStore) {
+      const { id } = scrollTaskStore;
+      const node = containerRef.current?.querySelector(
+        `.wx-bar[data-id='${id}']`,
+      );
+      if (node) node.focus({ preventScroll: true });
+    }
+  }, [scrollTaskStore]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -391,7 +386,7 @@ function Bars(props) {
       setLinkFrom(null);
     }
   }, [linkFrom]);
-  
+
   const onClick = useCallback(
     (e) => {
       if (ignoreNextClickRef.current) {
@@ -496,7 +491,7 @@ function Bars(props) {
       }}
     >
       {tasks.map((task) => {
-        if (task.$skip) return null;
+        if (task.$skip && task.$skip_baseline) return null;
         const barClass =
           `wx-bar wx-${taskTypeCss(task.type)}` +
           (touched && taskMove && task.id === taskMove.id ? ' wx-touch' : '') +
@@ -518,7 +513,7 @@ function Bars(props) {
             : '');
         return (
           <Fragment key={task.id}>
-            <div
+            {!task.$skip && <div
               className={'wx-GKbcLEGA ' + barClass}
               style={taskStyle(task)}
               data-tooltip-id={task.id}
@@ -574,6 +569,7 @@ function Bars(props) {
                 </div>
               ) : null}
             </div>
+            }
             {baselinesValue && !task.$skip_baseline ? (
               <div
                 className={
