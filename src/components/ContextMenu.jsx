@@ -8,34 +8,27 @@ import {
   useImperativeHandle,
 } from 'react';
 import { ContextMenu as WxContextMenu } from '@svar-ui/react-menu';
-import {
-  handleAction,
-  defaultMenuOptions,
-  isHandledAction,
-} from '@svar-ui/gantt-store';
-import { locale } from '@svar-ui/lib-dom';
+import { handleAction, getMenuOptions, isHandledAction } from '@svar-ui/gantt-store';
+import { locale, locateID } from '@svar-ui/lib-dom';
 import { en } from '@svar-ui/gantt-locales';
 import { en as coreEn } from '@svar-ui/core-locales';
 import { context } from '@svar-ui/react-core';
-import { useWritableProp, useStoreLater } from '@svar-ui/lib-react';
+import { useStoreLater } from '@svar-ui/lib-react';
 import './ContextMenu.css';
 
 const ContextMenu = forwardRef(function ContextMenu(
   {
-    options: optionsInit,
+    options: optionsInit = [],
     api = null,
     resolver = null,
     filter = null,
     at = 'point',
     children,
     onClick,
-    css
+    css,
   },
   ref,
 ) {
-  const ownMenu = useMemo(() => optionsInit ?? [...defaultMenuOptions], [optionsInit]);
-  const [optionsProp] = useWritableProp(ownMenu);
-
   const menuRef = useRef(null);
   const activeIdRef = useRef(null);
 
@@ -44,10 +37,12 @@ const ContextMenu = forwardRef(function ContextMenu(
   const l = useMemo(() => i18nCtx || locale({ ...en, ...coreEn }), [i18nCtx]);
   const _ = useMemo(() => l.getGroup('gantt'), [l]);
 
-  const rTaskTypesVal = useStoreLater(api, "taskTypes");
-  const rTasksVal = useStoreLater(api, "_tasks");
-  const rSelectedVal = useStoreLater(api, "selected");
-  const rSelectedTasksVal = useStoreLater(api, "_selected");
+  const taskTypesVal = useStoreLater(api, 'taskTypes');
+  const selectedVal = useStoreLater(api, 'selected');
+  const selectedTasksVal = useStoreLater(api, '_selected');
+  const splitTasksVal = useStoreLater(api, 'splitTasks');
+
+  const fullOptions = useMemo(() => getMenuOptions({ splitTasks: true }), []);
 
   useEffect(() => {
     if (!api) return;
@@ -71,27 +66,26 @@ const ContextMenu = forwardRef(function ContextMenu(
   }
 
   function getOptions() {
-    const convertOption = optionsProp.find((o) => o.id === 'convert-task');
+    const finalOptions = optionsInit.length
+      ? optionsInit
+      : getMenuOptions({ splitTasks: splitTasksVal });
+    const convertOption = finalOptions.find((o) => o.id === 'convert-task');
     if (convertOption) {
       convertOption.data = [];
-      (rTaskTypesVal || []).forEach((t) => {
+      (taskTypesVal || []).forEach((t) => {
         convertOption.data.push(convertOption.dataFactory(t));
       });
     }
-    return applyLocaleFn(optionsProp);
+    return applyLocaleFn(finalOptions);
   }
 
   const cOptions = useMemo(() => {
-    if (api) {
-      return getOptions();
-    }
-    return null;
-  }, [api, optionsProp, rTaskTypesVal, _]);
+    return getOptions();
+  }, [api, optionsInit, taskTypesVal, splitTasksVal, _]);
 
   const selectedTasks = useMemo(
-    () =>
-      rSelectedTasksVal && rSelectedTasksVal.length ? rSelectedTasksVal : [],
-    [rSelectedTasksVal],
+    () => (selectedTasksVal && selectedTasksVal.length ? selectedTasksVal : []),
+    [selectedTasksVal],
   );
 
   const itemResolver = useCallback(
@@ -102,40 +96,55 @@ const ContextMenu = forwardRef(function ContextMenu(
         task = result === true ? task : result;
       }
       if (task) {
-        activeIdRef.current = task.id;
-        if (!Array.isArray(rSelectedVal) || !rSelectedVal.includes(task.id)) {
+        const segmentIndex = locateID(ev.target, 'data-segment');
+        if (segmentIndex !== null)
+          activeIdRef.current = { id: task.id, segmentIndex };
+        else activeIdRef.current = task.id;
+
+        if (!Array.isArray(selectedVal) || !selectedVal.includes(task.id)) {
           api && api.exec && api.exec('select-task', { id: task.id });
         }
       }
       return task;
     },
-    [api, resolver, rSelectedVal],
+    [api, resolver, selectedVal],
   );
 
   const menuAction = useCallback(
     (ev) => {
       const action = ev.action;
       if (action) {
-        const isAction = isHandledAction(defaultMenuOptions, action.id);
+        const isAction = isHandledAction(fullOptions, action.id);
         if (isAction) handleAction(api, action.id, activeIdRef.current, _);
         onClick && onClick(ev);
       }
     },
-    [api, _, onClick],
+    [api, _, onClick, fullOptions],
   );
 
   const filterMenu = useCallback(
     (item, task) => {
+      // for single selection from resolver _selected are empty
+      // due to setAsyncState causing _selected to lag
       const tasks = selectedTasks.length ? selectedTasks : task ? [task] : [];
 
-      let result = filter ? filter(item, task) : true;
-      if (item.check && result) {
-        const isDisabled = tasks.some((t) => !item.check(t, rTasksVal));
-        item.css = isDisabled ? 'wx-disabled' : '';
+      let result = filter ? tasks.every((t) => filter(item, t)) : true;
+
+      if (result) {
+        if (item.isHidden)
+          result = !tasks.some((t) =>
+            item.isHidden(t, api.getState(), activeIdRef.current),
+          );
+        if (item.isDisabled) {
+          const disabled = tasks.some((t) =>
+            item.isDisabled(t, api.getState(), activeIdRef.current),
+          );
+          item.disabled = disabled;
+        }
       }
       return result;
     },
-    [filter, selectedTasks, rTasksVal],
+    [filter, selectedTasks, api],
   );
 
   useImperativeHandle(ref, () => ({

@@ -41,8 +41,8 @@ export default defineConfig(({ command, mode }) => {
     ...rollupOptions,
     external: [
       ...rollupOptions.external,
-      /^@wx\//, // matches all modules starting with "@svar-ui/"
-      /^@svar-ui\//, // matches all modules starting with "@svar-ui/"
+      /^@wx\//, // matches all modules starting with "@wx/"
+      /^@svar-ui\//, // matches all modules starting with "@wx/"
     ],
   };
 
@@ -66,6 +66,7 @@ export default defineConfig(({ command, mode }) => {
   return {
     plugins: [react()],
     build: {
+      sourcemap: true,
       lib: {
         //eslint-disable-next-line no-undef
         entry: resolve(__dirname, 'src/index.js'),

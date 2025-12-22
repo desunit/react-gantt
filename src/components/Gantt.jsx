@@ -5,17 +5,29 @@ import {
   useRef,
   useImperativeHandle,
   useState,
+  useContext,
 } from 'react';
 
 // core widgets lib
-import { Locale } from '@svar-ui/react-core';
+import { context } from '@svar-ui/react-core';
+
+// locales
+import { locale as l } from '@svar-ui/lib-dom';
 import { en } from '@svar-ui/gantt-locales';
+import { en as coreEn } from '@svar-ui/core-locales';
 
 // stores
 import { EventBusRouter } from '@svar-ui/lib-state';
-import { DataStore, defaultColumns, defaultTaskTypes } from '@svar-ui/gantt-store';
+import {
+  DataStore,
+  defaultColumns,
+  defaultTaskTypes,
+  parseTaskDates,
+  normalizeZoom,
+  normalizeLinks,
+} from '@svar-ui/gantt-store';
 
-// context 
+// context
 import StoreContext from '../context';
 
 // store factory
@@ -24,6 +36,13 @@ import { writable } from '@svar-ui/lib-react';
 // ui
 import Layout from './Layout.jsx';
 
+// helpers
+import {
+  prepareScales,
+  prepareFormats,
+  prepareColumns,
+  prepareZoom,
+} from '../helpers/prepareConfig.js';
 
 const camelize = (s) =>
   s
@@ -32,8 +51,8 @@ const camelize = (s) =>
     .join('');
 
 const defaultScales = [
-  { unit: 'month', step: 1, format: 'MMMM yyy' },
-  { unit: 'day', step: 1, format: 'd' },
+  { unit: 'month', step: 1, format: '%F %Y' },
+  { unit: 'day', step: 1, format: '%j' },
 ];
 
 const Gantt = forwardRef(function Gantt(
@@ -58,10 +77,17 @@ const Gantt = forwardRef(function Gantt(
     cellBorders = 'full',
     zoom = false,
     baselines = false,
-    highlightTime = null,
+    highlightTime: highlightTimeProp = null,
     init = null,
     autoScale = true,
     unscheduledTasks = false,
+    criticalPath = null,
+    schedule = { type: 'forward' },
+    projectStart = null,
+    projectEnd = null,
+    calendar = null,
+    undo = false,
+    splitTasks = false,
     ...restProps
   },
   ref,
@@ -70,9 +96,53 @@ const Gantt = forwardRef(function Gantt(
   const restPropsRef = useRef();
   restPropsRef.current = restProps;
 
-
   // init stores
   const dataStore = useMemo(() => new DataStore(writable), []);
+
+  // locale and formats
+  // uses same logic as the Locale component
+  const words = useMemo(() => ({ ...coreEn, ...en }), []);
+  const i18nCtx = useContext(context.i18n);
+  const locale = useMemo(() => {
+    if (!i18nCtx) return l(words);
+    return i18nCtx.extend(words, true);
+  }, [i18nCtx, words]);
+
+  // prepare configuration objects
+  const lCalendar = useMemo(() => locale.getRaw().calendar, [locale]);
+
+  const normalizedConfig = useMemo(() => {
+    let config = {
+      zoom: prepareZoom(zoom, lCalendar),
+      scales: prepareScales(scales, lCalendar),
+      columns: prepareColumns(columns, lCalendar),
+      links: normalizeLinks(links),
+      cellWidth,
+    };
+    if (config.zoom) {
+      config = {
+        ...config,
+        ...normalizeZoom(
+          config.zoom,
+          prepareFormats(lCalendar, locale.getGroup('gantt')),
+          config.scales,
+          cellWidth,
+        ),
+      };
+    }
+    return config;
+  }, [zoom, scales, columns, links, cellWidth, lCalendar, locale]);
+
+  // parse task dates effect
+  const parsedTasksRef = useRef(null);
+  if (parsedTasksRef.current !== tasks) {
+    parseTaskDates(tasks, { durationUnit, splitTasks, calendar });
+    parsedTasksRef.current = tasks;
+  }
+  useEffect(() => {
+    parseTaskDates(tasks, { durationUnit, splitTasks, calendar });
+  }, [tasks, durationUnit, calendar, splitTasks]);
+
   const firstInRoute = useMemo(() => dataStore.in, [dataStore]);
 
   const lastInRouteRef = useRef(null);
@@ -85,7 +155,6 @@ const Gantt = forwardRef(function Gantt(
     });
     firstInRoute.setNext(lastInRouteRef.current);
   }
-
 
   // writable prop for two-way binding tableAPI
   const [tableAPI, setTableAPI] = useState(null);
@@ -112,10 +181,10 @@ const Gantt = forwardRef(function Gantt(
         waitRender
           ? new Promise((res) => setTimeout(() => res(tableAPIRef.current), 1))
           : tableAPIRef.current,
+      getHistory: () => dataStore.getHistory(),
     }),
     [dataStore, firstInRoute],
   );
-
 
   // expose API via ref
   useImperativeHandle(
@@ -134,17 +203,17 @@ const Gantt = forwardRef(function Gantt(
       // const prev = dataStore.getState();
       dataStore.init({
         tasks,
-        links,
+        links: normalizedConfig.links,
         start,
-        columns,
+        columns: normalizedConfig.columns,
         end,
         lengthUnit,
-        cellWidth,
+        cellWidth: normalizedConfig.cellWidth,
         cellHeight,
         scaleHeight,
-        scales,
+        scales: normalizedConfig.scales,
         taskTypes,
-        zoom,
+        zoom: normalizedConfig.zoom,
         selected,
         activeTask,
         baselines,
@@ -152,22 +221,28 @@ const Gantt = forwardRef(function Gantt(
         unscheduledTasks,
         markers,
         durationUnit,
+        criticalPath,
+        schedule,
+        projectStart,
+        projectEnd,
+        calendar,
+        undo,
+        _weekStart: lCalendar.weekStart,
+        splitTasks,
       });
     }
     initOnceRef.current++;
   }, [
+    api,
+    init,
     tasks,
-    links,
+    normalizedConfig,
     start,
-    columns,
     end,
     lengthUnit,
-    cellWidth,
     cellHeight,
     scaleHeight,
-    scales,
     taskTypes,
-    zoom,
     selected,
     activeTask,
     baselines,
@@ -175,22 +250,31 @@ const Gantt = forwardRef(function Gantt(
     unscheduledTasks,
     markers,
     durationUnit,
+    criticalPath,
+    schedule,
+    projectStart,
+    projectEnd,
+    calendar,
+    undo,
+    lCalendar,
+    splitTasks,
+    dataStore,
   ]);
 
   if (initOnceRef.current === 0) {
     dataStore.init({
       tasks,
-      links,
+      links: normalizedConfig.links,
       start,
-      columns,
+      columns: normalizedConfig.columns,
       end,
       lengthUnit,
-      cellWidth,
+      cellWidth: normalizedConfig.cellWidth,
       cellHeight,
       scaleHeight,
-      scales,
+      scales: normalizedConfig.scales,
       taskTypes,
-      zoom,
+      zoom: normalizedConfig.zoom,
       selected,
       activeTask,
       baselines,
@@ -198,11 +282,31 @@ const Gantt = forwardRef(function Gantt(
       unscheduledTasks,
       markers,
       durationUnit,
+      criticalPath,
+      schedule,
+      projectStart,
+      projectEnd,
+      calendar,
+      undo,
+      _weekStart: lCalendar.weekStart,
+      splitTasks,
     });
   }
 
+  // highlightTime from calendar
+  const highlightTime = useMemo(() => {
+    if (calendar) {
+      return (day, unit) => {
+        if (unit == 'day' && !calendar.getDayHours(day)) return 'wx-weekend';
+        if (unit == 'hour' && !calendar.getDayHours(day)) return 'wx-weekend';
+        return '';
+      };
+    }
+    return highlightTimeProp;
+  }, [calendar, highlightTimeProp]);
+
   return (
-    <Locale words={en} optional={true}>
+    <context.i18n.Provider value={locale}>
       <StoreContext.Provider value={api}>
         <Layout
           taskTemplate={taskTemplate}
@@ -212,7 +316,7 @@ const Gantt = forwardRef(function Gantt(
           onTableAPIChange={setTableAPI}
         />
       </StoreContext.Provider>
-    </Locale>
+    </context.i18n.Provider>
   );
 });
 

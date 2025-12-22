@@ -76,13 +76,13 @@
 }
 
 .wx-demos.sidebar.active {
-  width: 300px;
+  width: 320px;
 }
 
 .wx-demos.sidebar-content {
   display: flex;
   flex-direction: column;
-  width: 300px;
+  width: 320px;
   gap: 16px;
   height: 100%;
   border-right: 1px solid #ebebeb;
@@ -133,7 +133,7 @@
 .wx-demos.box-links {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .wx-demos.hint {
@@ -210,14 +210,14 @@
 .wx-demos.demo {
   display: flex;
   align-items: center;
-  height: 37px;
   font-weight: 400;
-  padding-left: 16px;
+  padding: 8px 12px 8px 16px;
   border-left: 4px solid transparent;
   color: #595b66;
   list-style: none;
   cursor: pointer;
   text-decoration: none;
+  min-height: 38px;
 }
 
 .wx-demos.demo.active {
@@ -226,7 +226,26 @@
 
 .wx-demos.demo.active,
 .wx-demos.demo:hover {
-  font-weight: 500;
+  font-weight: 400;
   color: #42454d;
   background-color: #f1f1f1;
+}
+
+.wx-demos.demo.active {
+  font-weight: 500;
+}
+
+.wx-demos.demo .pro {
+  color: #087a9f;
+  border: 1px solid #087a9f;
+  border-radius: 4px;
+  padding: 0px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: auto;
+  letter-spacing: 0.4px;
+}
+
+.wx-theme {
+  height: 100%;
 }

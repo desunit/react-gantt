@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useContext } from 'react';
-import { Field, Combo } from '@svar-ui/react-core';
+import { Field, Combo, Text } from '@svar-ui/react-core';
 import { context } from '@svar-ui/react-core';
 import { useStore } from '@svar-ui/lib-react';
 import './Links.css';
@@ -8,8 +8,11 @@ export default function Links({ api, autoSave, onLinksChange }) {
   const i18n = useContext(context.i18n);
   const _ = i18n.getGroup('gantt');
 
-  const activeTask = useStore(api,"activeTask");
-  const links = useStore(api,"_links");
+  const activeTask = useStore(api, 'activeTask');
+  const _activeTask = useStore(api, '_activeTask');
+  const links = useStore(api, '_links');
+  const schedule = useStore(api, 'schedule');
+  const unscheduledTasks = useStore(api, 'unscheduledTasks');
 
   const [linksData, setLinksData] = useState();
 
@@ -63,12 +66,11 @@ export default function Links({ api, autoSave, onLinksChange }) {
     }
   }
 
-  function handleChange(ev, id) {
-    const value = ev.value;
+  function handleChange(id, update) {
     if (autoSave) {
       api.exec('update-link', {
         id,
-        link: { type: value },
+        link: update,
       });
     } else {
       setLinksData((prev) =>
@@ -76,7 +78,7 @@ export default function Links({ api, autoSave, onLinksChange }) {
           ...group,
           data: group.data.map((item) =>
             item.link.id === id
-              ? { ...item, link: { ...item.link, type: value } }
+              ? { ...item, link: { ...item.link, ...update } }
               : item,
           ),
         })),
@@ -87,7 +89,7 @@ export default function Links({ api, autoSave, onLinksChange }) {
           action: 'update-link',
           data: {
             id,
-            link: { type: value },
+            link: update,
           },
         });
     }
@@ -108,14 +110,31 @@ export default function Links({ api, autoSave, onLinksChange }) {
                           {obj.task.text || ''}
                         </div>
                       </td>
-
+                      {schedule?.auto && obj.link.type === 'e2s' ? (
+                        <td className="wx-j93aYGQf wx-cell wx-link-lag">
+                          <Text
+                            type="number"
+                            placeholder={_('Lag')}
+                            value={obj.link.lag}
+                            disabled={
+                              unscheduledTasks && _activeTask?.unscheduled
+                            }
+                            onChange={(ev) => {
+                              if (!ev.input)
+                                handleChange(obj.link.id, { lag: ev.value });
+                            }}
+                          />
+                        </td>
+                      ) : null}
                       <td className="wx-j93aYGQf wx-cell">
                         <div className="wx-j93aYGQf wx-wrapper">
                           <Combo
                             value={obj.link.type}
                             placeholder={_('Select link type')}
                             options={list}
-                            onChange={(e) => handleChange(e, obj.link.id)}
+                            onChange={(ev) =>
+                              handleChange(obj.link.id, { type: ev.value })
+                            }
                           >
                             {({ option }) => option.label}
                           </Combo>

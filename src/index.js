@@ -1,5 +1,4 @@
 import Gantt from './components/Gantt.jsx';
-import Fullscreen from './components/Fullscreen.jsx';
 import Toolbar from './components/Toolbar.jsx';
 import ContextMenu from './components/ContextMenu.jsx';
 import Editor from './components/Editor.jsx';
@@ -17,6 +16,9 @@ export {
   defaultMenuOptions,
   defaultColumns,
   defaultTaskTypes,
+  getEditorItems,
+  getToolbarButtons,
+  getMenuOptions,
   registerScaleUnit,
 } from '@svar-ui/gantt-store';
 
@@ -24,7 +26,6 @@ export { registerEditorItem } from '@svar-ui/react-editor';
 
 export {
   Gantt,
-  Fullscreen,
   ContextMenu,
   HeaderMenu,
   Toolbar,

@@ -12,7 +12,7 @@
   align-items: end;
   font-family: var(--wx-font-family);
   font-size: var(--wx-font-size);
-  padding-top: 12px;
+  padding: 12px 0;
   --wx-label-width: 130px;
 }
 
@@ -32,6 +32,16 @@
 }
 .gantt.wx-RPSbwjNq.hide-links > .wx-gantt .wx-bar .wx-link {
   display: none;
+}
+.gantt.wx-RPSbwjNq.hide-delete-links > .wx-gantt .wx-delete-link {
+  display: none;
+}
+.gantt.wx-RPSbwjNq.hide-delete-links > .wx-gantt .wx-line:hover {
+  cursor: default;
+  stroke: var(--wx-gantt-link-color);
+}
+.gantt.wx-RPSbwjNq.hide-delete-links > .wx-gantt .wx-line.wx-line-selectable {
+  cursor: default;
 }
 .gantt.wx-RPSbwjNq.hide-drag > .wx-gantt .wx-bar {
   cursor: pointer !important;

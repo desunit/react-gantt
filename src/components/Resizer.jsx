@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useWritableProp } from '@svar-ui/lib-react';
 import './Resizer.css';
 
@@ -7,16 +7,17 @@ function Resizer(props) {
     position = 'after',
     size = 4,
     dir = 'x',
-    minValue = 0,
-    maxValue = 0,
     onMove,
     onDisplayChange,
     compactMode,
+    containerWidth = 0,
+    leftThreshold = 50,
+    rightThreshold = 50,
   } = props;
 
   const [value, setValue] = useWritableProp(props.value ?? 0);
   const [display, setDisplay] = useWritableProp(props.display ?? 'all');
-  
+
   function getBox(val) {
     let offset = 0;
     if (position == 'center') offset = size / 2;
@@ -35,24 +36,52 @@ function Resizer(props) {
   }
 
   const [active, setActive] = useState(false);
+  const [initialPosition, setInitialPosition] = useState(null);
 
   const startRef = useRef(0);
   const posRef = useRef();
+  const timeoutRef = useRef();
+  const displayRef = useRef(display);
+
+  useEffect(() => {
+    displayRef.current = display;
+  }, [display]);
+
+  useEffect(() => {
+    if (initialPosition === null && value > 0) {
+      setInitialPosition(value);
+    }
+  }, [initialPosition, value]);
 
   function getEventPos(ev) {
     return dir == 'x' ? ev.clientX : ev.clientY;
   }
 
-  const move = useCallback((ev) => {
-    const newPos = posRef.current + getEventPos(ev) - startRef.current;
-    if (
-      (!minValue || minValue <= newPos) &&
-      (!maxValue || maxValue >= newPos)
-    ) {
+  const move = useCallback(
+    (ev) => {
+      const newPos = posRef.current + getEventPos(ev) - startRef.current;
+
       setValue(newPos);
-      onMove(newPos)
-    }
-  }, []);
+      let nextDisplay;
+
+      if (newPos <= leftThreshold) {
+        nextDisplay = 'chart';
+      } else if (containerWidth - newPos <= rightThreshold) {
+        nextDisplay = 'grid';
+      } else {
+        nextDisplay = 'all';
+      }
+
+      if (displayRef.current !== nextDisplay) {
+        setDisplay(nextDisplay);
+        displayRef.current = nextDisplay;
+      }
+
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => onMove && onMove(newPos), 100);
+    },
+    [containerWidth, leftThreshold, rightThreshold, onMove],
+  );
 
   const up = useCallback(() => {
     document.body.style.cursor = '';
@@ -69,6 +98,11 @@ function Resizer(props) {
 
   const down = useCallback(
     (ev) => {
+      // Prevent dragging when in normal mode and only one view is visible
+      if (!compactMode && (display === 'grid' || display === 'chart')) {
+        return;
+      }
+
       startRef.current = getEventPos(ev);
 
       posRef.current = value;
@@ -80,29 +114,40 @@ function Resizer(props) {
       window.addEventListener('mousemove', move);
       window.addEventListener('mouseup', up);
     },
-    [cursor, move, up, value],
+    [cursor, move, up, value, compactMode, display],
   );
 
-  function handleExpandLeft() {
-    let newDisplay;
-    if (compactMode) {
-      newDisplay = display === 'chart' ? 'grid' : 'chart';
-    } else {
-      newDisplay = display === 'all' ? 'chart' : 'all';
+  function resetToInitial() {
+    setDisplay('all');
+    if (initialPosition !== null) {
+      setValue(initialPosition);
+      if (onMove) onMove(initialPosition);
     }
-    setDisplay(newDisplay);
-    onDisplayChange(newDisplay);
+  }
+
+  function handleExpand(direction) {
+    if (compactMode) {
+      const newDisplay = display === 'chart' ? 'grid' : 'chart';
+      setDisplay(newDisplay);
+      onDisplayChange(newDisplay);
+    } else {
+      if (display === 'grid' || display === 'chart') {
+        resetToInitial();
+        onDisplayChange('all');
+      } else {
+        const newDisplay = direction === 'left' ? 'chart' : 'grid';
+        setDisplay(newDisplay);
+        onDisplayChange(newDisplay);
+      }
+    }
+  }
+
+  function handleExpandLeft() {
+    handleExpand('left');
   }
 
   function handleExpandRight() {
-    let newDisplay;
-    if (compactMode) {
-      newDisplay = display === 'grid' ? 'chart' : 'grid';
-    } else {
-      newDisplay = display === 'all' ? 'grid' : 'all';
-    }
-    setDisplay(newDisplay);
-    onDisplayChange(newDisplay);
+    handleExpand('right');
   }
 
   const b = useMemo(() => getBox(value), [value, position, size, dir]);
@@ -122,25 +167,21 @@ function Resizer(props) {
       onMouseDown={down}
       style={{ width: b.size[0], height: b.size[1], cursor }}
     >
-      <div className='wx-pFykzMlT wx-button-expand-box'>
-        <div
-          className='wx-pFykzMlT wx-button-expand-content wx-button-expand-left'
-        >
+      <div className="wx-pFykzMlT wx-button-expand-box">
+        <div className="wx-pFykzMlT wx-button-expand-content wx-button-expand-left">
           <i
-            className='wx-pFykzMlT wxi-menu-left'
+            className="wx-pFykzMlT wxi-menu-left"
             onClick={handleExpandLeft}
           ></i>
         </div>
-        <div
-          className='wx-pFykzMlT wx-button-expand-content wx-button-expand-right'
-        >
+        <div className="wx-pFykzMlT wx-button-expand-content wx-button-expand-right">
           <i
-            className='wx-pFykzMlT wxi-menu-right'
+            className="wx-pFykzMlT wxi-menu-right"
             onClick={handleExpandRight}
           ></i>
         </div>
       </div>
-      <div className='wx-pFykzMlT wx-resizer-line'></div>
+      <div className="wx-pFykzMlT wx-resizer-line"></div>
     </div>
   );
 }

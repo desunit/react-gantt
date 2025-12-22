@@ -14,6 +14,7 @@ import { modeObserver } from '../helpers/modeResizeObserver';
 import storeContext from '../context';
 import { useStore } from '@svar-ui/lib-react';
 import './Layout.css';
+import { flushSync } from 'react-dom'
 
 function Layout(props) {
   const {
@@ -21,20 +22,21 @@ function Layout(props) {
     readonly,
     cellBorders,
     highlightTime,
-    onTableAPIChange
+    onTableAPIChange,
   } = props;
 
   const api = useContext(storeContext);
 
-  const rTasks = useStore(api, "_tasks");
-  const rScales = useStore(api, "_scales");
-  const rCellHeight = useStore(api, "cellHeight");
-  const rColumns = useStore(api, "columns");
-  const rScrollTask = useStore(api, "_scrollTask");
+  const rTasks = useStore(api, '_tasks');
+  const rScales = useStore(api, '_scales');
+  const rCellHeight = useStore(api, 'cellHeight');
+  const rColumns = useStore(api, 'columns');
+  const rScrollTask = useStore(api, '_scrollTask');
+  const undo = useStore(api, 'undo');
   const [compactMode, setCompactMode] = useState(false);
   let [gridWidth, setGridWidth] = useState(0);
-  const [ganttWidth, setGanttWidth] = useState(undefined);
-  const [ganttHeight, setGanttHeight] = useState(undefined);
+  const [ganttWidth, setGanttWidth] = useState(0);
+  const [ganttHeight, setGanttHeight] = useState(0);
   const [innerWidth, setInnerWidth] = useState(undefined);
   const [display, setDisplay] = useState('all');
 
@@ -56,7 +58,6 @@ function Layout(props) {
     },
     [display],
   );
-
 
   useEffect(() => {
     const ro = modeObserver(handleResize);
@@ -80,7 +81,6 @@ function Layout(props) {
     gridWidth = w;
     return w;
   }, [rColumns, compactMode, display]);
-
 
   useEffect(() => {
     setGridWidth(gridColumnWidth);
@@ -124,6 +124,10 @@ function Layout(props) {
       if (ro) ro.disconnect();
     };
   }, [chartRef.current, expandScale]);
+
+  useEffect(() => {
+    expandScale();
+  }, [fullWidth]);
 
   const ganttDivRef = useRef(null);
   const pseudoRowsRef = useRef(null);
@@ -191,39 +195,33 @@ function Layout(props) {
   );
 
   useEffect(() => {
-      scrollToTask(rScrollTask);
+    scrollToTask(rScrollTask);
   }, [rScrollTask]);
 
   useEffect(() => {
-    const el = ganttDivRef.current;
-    if (!el) return;
+    const ganttDiv = ganttDivRef.current;
+    const pseudoRows = pseudoRowsRef.current;
+    if (!ganttDiv || !pseudoRows) return;
     const update = () => {
-      setGanttHeight(el.offsetHeight);
-      setGanttWidth(el.offsetWidth);
+      flushSync(() => {
+        setGanttHeight(ganttDiv.offsetHeight);
+        setGanttWidth(ganttDiv.offsetWidth);
+        setInnerWidth(pseudoRows.offsetWidth);
+      });
     };
-    update();
     const ro = new ResizeObserver(update);
-    ro.observe(el);
+    ro.observe(ganttDiv);
     return () => ro.disconnect();
   }, [ganttDivRef.current]);
-
-  useEffect(() => {
-    const el = pseudoRowsRef.current;
-    if (!el) return;
-    const update = () => {
-      setInnerWidth(el.offsetWidth);
-    };
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [pseudoRowsRef.current]);
 
   const layoutRef = useRef(null);
   const cleanupRef = useRef(null);
 
   useEffect(() => {
-    if (cleanupRef.current) return;
+    if (cleanupRef.current) {
+      cleanupRef.current.destroy();
+      cleanupRef.current = null;
+    }
     const node = layoutRef.current;
     if (!node) return;
 
@@ -234,6 +232,8 @@ function Layout(props) {
         'ctrl+x': true,
         'ctrl+d': true,
         backspace: true,
+        'ctrl+z': undo,
+        'ctrl+y': undo,
       },
       exec: (ev) => {
         if (!ev.isInput) api.exec('hotkey', ev);
@@ -244,7 +244,7 @@ function Layout(props) {
       cleanupRef.current?.destroy();
       cleanupRef.current = null;
     };
-  }, []);
+  }, [undo]);
 
   return (
     <div className="wx-jlbQoHOz wx-gantt" ref={ganttDivRef} onScroll={onScroll}>
@@ -276,8 +276,7 @@ function Layout(props) {
                   value={gridWidth}
                   display={display}
                   compactMode={compactMode}
-                  minValue="50"
-                  maxValue="800"
+                  containerWidth={ganttWidth}
                   onMove={(value) => setGridWidth(value)}
                   onDisplayChange={(display) => setDisplay(display)}
                 />

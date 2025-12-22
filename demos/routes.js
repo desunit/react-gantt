@@ -30,14 +30,13 @@ import GanttTaskTypes from './cases/GanttTaskTypes.jsx';
 import ChartCellBorders from './cases/ChartBorders.jsx';
 import ContextMenu from './cases/ContextMenu.jsx';
 import ContextMenuHandler from './cases/ContextMenuHandler.jsx';
-// import DropDownMenu from "./cases/DropDownMenu.jsx";
+//import DropDownMenu from "./cases/DropDownMenu.jsx";
 import ContextMenuOptions from './cases/ContextMenuOptions.jsx';
 import GanttHolidays from './cases/GanttHolidays.jsx';
 import GanttSort from './cases/GanttSort.jsx';
 import GanttCustomSort from './cases/GanttCustomSort.jsx';
-import GanttSummariesProgress from './cases/GanttSummariesProgress.jsx';
-import GanttSummariesNoDrag from './cases/GanttSummariesNoDrag.jsx';
-import GanttSummariesConvert from './cases/GanttSummariesConvert.jsx';
+import SummariesProgress from './cases/ProSummariesProgress.jsx';
+import SummariesConvert from './cases/ProSummariesConvert.jsx';
 import GanttEditor from './cases/GanttEditor.jsx';
 import GanttEditorConfig from './cases/GanttEditorConfig.jsx';
 import GanttEditorCustomControls from './cases/GanttEditorCustomControls.jsx';
@@ -79,28 +78,11 @@ export const links = [
 
   ['/holidays/:skin', 'Holidays', GanttHolidays, 'GanttHolidays'],
 
+
   ['/templates/:skin', 'Custom text', GanttText, 'GanttText'],
   ['/tooltips/:skin', 'Tooltips', GanttTooltips, 'GanttTooltips'],
 
   ['/task-types/:skin', 'Task types', GanttTaskTypes, 'GanttTaskTypes'],
-  [
-    '/summary-progress/:skin',
-    'Summary tasks with auto progress',
-    GanttSummariesProgress,
-    'GanttSummariesProgress',
-  ],
-  [
-    '/summary-no-drag/:skin',
-    'No drag for summary tasks',
-    GanttSummariesNoDrag,
-    'GanttSummariesNoDrag',
-  ],
-  [
-    '/summary-convert/:skin',
-    'Auto convert to summary tasks',
-    GanttSummariesConvert,
-    'GanttSummariesConvert',
-  ],
 
   ['/zoom/:skin', 'Zoom', GanttZoom, 'GanttZoom'],
   ['/custom-zoom/:skin', 'Custom Zoom', GanttCustomZoom, 'GanttCustomZoom'],
@@ -176,17 +158,9 @@ export const links = [
     HeaderMenu,
     'GridHeaderMenu',
   ],
-  ['/custom-edit-form/:skin', 'Custom editor', GanttForm, 'GanttForm'],
   ['/locale/:skin', 'Locales', GanttLocale, 'GanttLocale'],
   ['/fullscreen/:skin', 'Fullscreen', GanttFullscreen, 'GanttFullscreen'],
   ['/readonly/:skin', 'Readonly mode', GanttReadOnly, 'GanttReadOnly'],
-
-  [
-    '/prevent-actions/:skin',
-    'Preventing actions',
-    GanttPreventActions,
-    'GanttPreventActions',
-  ],
   [
     '/gantt-multiple/:skin',
     'Many Gantts per page',
@@ -194,7 +168,12 @@ export const links = [
     'GanttMultiple',
   ],
   ['/performance/:skin', 'Performance', GanttPerformance, 'GanttPerformance'],
-
+  [
+    '/prevent-actions/:skin',
+    'Preventing UI actions',
+    GanttPreventActions,
+    'GanttPreventActions',
+  ],
   ['/sorting/:skin', 'Custom sorting', GanttSort, 'GanttSort'],
   ['/sorting-api/:skin', 'Sort by API', GanttCustomSort, 'GanttCustomSort'],
 
@@ -248,4 +227,5 @@ export const links = [
     GanttEditorValidation,
     'GanttEditorValidation',
   ],
+  ['/custom-edit-form/:skin', 'Custom edit form', GanttForm, 'GanttForm'],
 ];

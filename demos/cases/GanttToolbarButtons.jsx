@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useContext } from 'react';
 import { context } from '@svar-ui/react-core';
 import { getData } from '../data';
-import { Gantt, Toolbar, Editor, defaultToolbarButtons } from '../../src/';
+import { Gantt, Toolbar, Editor, getToolbarButtons } from '../../src/';
 import './GanttToolbarButtons.css';
 
 export default function GanttToolbarButtons({ skinSettings }) {
@@ -15,7 +15,7 @@ export default function GanttToolbarButtons({ skinSettings }) {
   }, [helpers]);
 
   const items = useMemo(() => {
-    const items = defaultToolbarButtons.filter((b) => {
+    const items = getToolbarButtons().filter((b) => {
       return b.id?.indexOf('indent') === -1;
     });
 

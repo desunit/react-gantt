@@ -3,7 +3,7 @@ import {
   Gantt,
   ContextMenu,
   Editor,
-  defaultEditorItems,
+  getEditorItems,
   defaultColumns,
 } from '../../src';
 import { format } from 'date-fns';
@@ -16,7 +16,7 @@ export default function GanttDurationUnitHour({ skinSettings }) {
 
   const items = useMemo(
     () =>
-      defaultEditorItems.map((ed) => ({
+      getEditorItems().map((ed) => ({
         ...ed,
         ...(ed.comp === 'date' && { config: { time: true } }),
       })),

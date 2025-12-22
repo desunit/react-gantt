@@ -44,7 +44,7 @@ export default function DropDownMenu({ skinSettings }) {
             links={data.links}
             scales={data.scales}
           />
-          <Editor api={api} />
+          {api && <Editor api={api} />}
         </div>
       </div>
     </>

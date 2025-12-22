@@ -9,7 +9,7 @@ import {
 import { context } from '@svar-ui/react-core';
 import { locateID, locateAttr } from '@svar-ui/lib-dom';
 import { reorder } from '../../helpers/reorder';
-import { normalizeDates } from '@svar-ui/gantt-store';
+import { prepareEditTask } from '@svar-ui/gantt-store';
 import { Grid as WxGrid } from '@svar-ui/react-grid';
 import TextCell from './TextCell.jsx';
 import ActionCell from './ActionCell.jsx';
@@ -18,7 +18,14 @@ import storeContext from '../../context';
 import './Grid.css';
 
 export default function Grid(props) {
-  const { readonly, compactMode, width = 0, display = 'all', columnWidth: columnWidthProp = 0, onTableAPIChange } = props;
+  const {
+    readonly,
+    compactMode,
+    width = 0,
+    display = 'all',
+    columnWidth: columnWidthProp = 0,
+    onTableAPIChange,
+  } = props;
   const [columnWidth, setColumnWidthProp] = useWritableProp(columnWidthProp);
   const [tableAPI, setTableAPI] = useState();
 
@@ -26,19 +33,19 @@ export default function Grid(props) {
   const _ = useMemo(() => i18n.getGroup('gantt'), [i18n]);
   const api = useContext(storeContext);
 
-  const scrollTopVal = useStore(api, "scrollTop");
-  const cellHeightVal = useStore(api, "cellHeight");
-  const scrollTask = useStore(api, "_scrollTask");
-  const selectedVal = useStore(api, "_selected");
-  const areaVal = useStore(api, "area");
-  const rTasksVal = useStore(api, "_tasks");
-  const scalesVal = useStore(api, "_scales");
-  const columnsVal = useStore(api, "columns");
-  const sortVal = useStore(api, "_sort");
-  const durationUnitVal = useStore(api, "durationUnit");
+  const scrollTopVal = useStore(api, 'scrollTop');
+  const cellHeightVal = useStore(api, 'cellHeight');
+  const scrollTask = useStore(api, '_scrollTask');
+  const selectedVal = useStore(api, '_selected');
+  const areaVal = useStore(api, 'area');
+  const rTasksVal = useStore(api, '_tasks');
+  const scalesVal = useStore(api, '_scales');
+  const columnsVal = useStore(api, 'columns');
+  const sortVal = useStore(api, '_sort');
+  const calendarVal = useStore(api, 'calendar');
+  const durationUnitVal = useStore(api, 'durationUnit');
+  const splitTasksVal = useStore(api, 'splitTasks');
 
-  const touchYRef = useRef(null);
-  const scrollRef = useRef(true);
   const [dragTask, setDragTask] = useState(null);
 
   const tasks = useMemo(() => {
@@ -61,7 +68,7 @@ export default function Grid(props) {
           api.exec(action, { id, mode: !task.open });
       }
     },
-    [tasks]
+    [tasks],
   );
 
   const onClick = useCallback(
@@ -101,8 +108,6 @@ export default function Grid(props) {
     ro.observe(node);
     return () => ro.disconnect();
   }, []);
-
-
 
   const lastDetailRef = useRef(null);
 
@@ -222,7 +227,6 @@ export default function Grid(props) {
     return {};
   }, [allTasks, sortVal]);
 
-
   const checkFlex = useCallback(() => {
     return cols.some((c) => c.flexgrow && !c.hidden);
   }, []); // cols defined later; will use latest value when invoked
@@ -271,7 +275,6 @@ export default function Grid(props) {
     return filteredColumns;
   }, [display, cols, hasFlexCol, columnWidth, width, gridWidth]);
 
-
   const setColumnWidth = useCallback(
     (resized) => {
       if (!checkFlex()) {
@@ -307,40 +310,10 @@ export default function Grid(props) {
     [api, readonly], // cols is defined later; relies on latest value at call time
   );
 
-  const endScroll = useCallback(() => {
-    scrollRef.current = false;
-  }, []);
-
-  const onTouchstart = useCallback(
-    (e) => {
-      scrollRef.current = true;
-      touchYRef.current = e.touches[0].clientY + (scrollTopVal ?? 0);
-    },
-    [scrollTopVal],
-  );
-
-  const onTouchmove = useCallback(
-    (e) => {
-      if (scrollRef.current) {
-        const delta = (touchYRef.current ?? 0) - e.touches[0].clientY;
-        api.exec('scroll-chart', { top: delta });
-        e.preventDefault();
-        return false;
-      }
-    },
-    [api],
-  );
-
   const sel = useMemo(
     () => (Array.isArray(selectedVal) ? selectedVal.map((o) => o.id) : []),
     [selectedVal],
   );
-
-  useEffect(() => {
-    const handler = () => endScroll();
-    window.addEventListener('touchend', handler);
-    return () => window.removeEventListener('touchend', handler);
-  }, [endScroll]);
 
   const setScrollOffset = useCallback(() => {
     if (tableRef.current && allTasks !== null) {
@@ -373,7 +346,7 @@ export default function Grid(props) {
 
   useEffect(() => {
     if (!scrollTask || !tableAPI) return;
-  
+
     const { id } = scrollTask;
     const focusCell = tableAPI.getState().focusCell;
     if (
@@ -387,7 +360,6 @@ export default function Grid(props) {
         column: focusCell.column,
       });
     }
-    
   }, [scrollTask, tableAPI]);
 
   const startReorder = useCallback(
@@ -438,13 +410,12 @@ export default function Grid(props) {
     if (!node) return;
     const action = reorder(node, {
       start: startReorder,
-      touchStart: endScroll,
       end: endReorder,
       move: moveReorder,
       getTask: api.getTask,
     });
     return action.destroy;
-  }, [api, startReorder, endScroll, endReorder, moveReorder]);
+  }, [api, startReorder, endReorder, moveReorder]);
 
   const handleHotkey = useCallback(
     (ev) => {
@@ -479,69 +450,88 @@ export default function Grid(props) {
       adjustColumns,
       setColumnWidth,
       tasks,
+      calendarVal,
       durationUnitVal,
-      onTableAPIChange
+      splitTasksVal,
+      onTableAPIChange,
     };
   };
   setHandlersState();
   useEffect(() => {
     setHandlersState();
-  }, [setTableAPI, handleHotkey, sortVal, api, adjustColumns, setColumnWidth, tasks, durationUnitVal, onTableAPIChange]);
+  }, [
+    setTableAPI,
+    handleHotkey,
+    sortVal,
+    api,
+    adjustColumns,
+    setColumnWidth,
+    tasks,
+    calendarVal,
+    durationUnitVal,
+    splitTasksVal,
+    onTableAPIChange,
+  ]);
 
-  const init = useCallback(
-    (tapi) => {
-      setTableAPI(tapi);
-      tapi.intercept('hotkey', (ev) => handlersStateRef.current.handleHotkey(ev));
-      tapi.intercept('scroll', () => false);
-      tapi.intercept('select-row', () => false);
-      tapi.intercept('sort-rows', (e) => {
-        const sortVal = handlersStateRef.current.sortVal;
-        const { key, add } = e;
-        const keySort = sortVal ? sortVal.find((s) => s.key === key) : null;
-        let order = 'asc';
-        if (keySort)
-          order = !keySort || keySort.order === 'asc' ? 'desc' : 'asc';
+  const init = useCallback((tapi) => {
+    setTableAPI(tapi);
+    tapi.intercept('hotkey', (ev) => handlersStateRef.current.handleHotkey(ev));
+    tapi.intercept('scroll', () => false);
+    tapi.intercept('select-row', () => false);
+    tapi.intercept('sort-rows', (e) => {
+      const sortVal = handlersStateRef.current.sortVal;
+      const { key, add } = e;
+      const keySort = sortVal ? sortVal.find((s) => s.key === key) : null;
+      let order = 'asc';
+      if (keySort) order = !keySort || keySort.order === 'asc' ? 'desc' : 'asc';
 
-        api.exec('sort-tasks', {
-          key,
-          order,
-          add,
+      api.exec('sort-tasks', {
+        key,
+        order,
+        add,
+      });
+      return false;
+    });
+
+    tapi.on('resize-column', () => {
+      handlersStateRef.current.setColumnWidth(true);
+    });
+
+    tapi.on('hide-column', (ev) => {
+      if (!ev.mode) handlersStateRef.current.adjustColumns();
+      handlersStateRef.current.setColumnWidth();
+    });
+
+    tapi.intercept('update-cell', (e) => {
+      const { id, column, value } = e;
+      const task = handlersStateRef.current.tasks.find((t) => t.id === id);
+
+      if (task) {
+        const update = { ...task };
+        let v = value;
+        if (v && !isNaN(v) && !(v instanceof Date)) v *= 1;
+        update[column] = v;
+
+        prepareEditTask(
+          update,
+          {
+            calendar: handlersStateRef.current.calendarVal,
+            durationUnit: handlersStateRef.current.durationUnitVal,
+            splitTasks: handlersStateRef.current.splitTasksVal,
+          },
+          column,
+        );
+
+        api.exec('update-task', {
+          id: id,
+          task: update,
         });
-        return false;
-      });
+      }
+      return false;
+    });
 
-      tapi.on('resize-column', () => {
-        handlersStateRef.current.setColumnWidth(true);
-      });
-
-      tapi.on('hide-column', (ev) => {
-        if (!ev.mode) handlersStateRef.current.adjustColumns();
-        handlersStateRef.current.setColumnWidth();
-      });
-
-      tapi.intercept('update-cell', (e) => {
-        const { id, column, value } = e;
-        const task = handlersStateRef.current.tasks.find((t) => t.id === id);
-
-        if (task) {
-          const update = { ...task };
-          let v = value;
-          if (v && !isNaN(v) && !(v instanceof Date)) v *= 1;
-          update[column] = v;
-
-          normalizeDates(update, handlersStateRef.current.durationUnitVal, true, column);
-
-          api.exec('update-task', {
-            id: id,
-            task: update,
-          });
-        }
-        return false;
-      });
-
-      onTableAPIChange && onTableAPIChange(tapi);
-    }, [],
-  );
+    onTableAPIChange && onTableAPIChange(tapi);
+  }, []);
 
   return (
     <div
@@ -553,8 +543,6 @@ export default function Grid(props) {
         ref={tableRef}
         style={tableStyle}
         className="wx-rHj6070p wx-table"
-        onTouchStart={onTouchstart}
-        onTouchMove={onTouchmove}
         onClick={onClick}
         onDoubleClick={onDblClick}
       >

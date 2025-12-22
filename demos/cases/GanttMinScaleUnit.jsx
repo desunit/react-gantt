@@ -8,17 +8,17 @@ import {
   isSameMonth,
   addMonths,
   addDays,
-  format,
   differenceInDays,
+  format,
 } from 'date-fns';
 import './GanttMinScaleUnit.css';
 
 const options = [
-    { id: 1, label: 'sprint' },
-    { id: 2, label: 'month, sprint' },
-    { id: 3, label: 'month, sprint, week' },
-    { id: 4, label: 'month, sprint, week, day' },
-  ];
+  { id: 1, label: 'sprint' },
+  { id: 2, label: 'month, sprint' },
+  { id: 3, label: 'month, sprint, week' },
+  { id: 4, label: 'month, sprint, week, day' },
+];
 
 export default function GanttMinScaleUnit({ skinSettings }) {
   const data = useMemo(() => getData(), []);
@@ -51,10 +51,10 @@ export default function GanttMinScaleUnit({ skinSettings }) {
 
   const allScales = useMemo(
     () => [
-      { unit: 'month', step: 1, format: 'MMMM yyy' },
+      { unit: 'month', step: 1, format: '%F %Y' },
       { unit: 'sprint', step: 1, format: sprintFormat },
-      { unit: 'week', step: 1, format: 'w' },
-      { unit: 'day', step: 1, format: 'd' },
+      { unit: 'week', step: 1, format: '%w' },
+      { unit: 'day', step: 1, format: '%j' },
     ],
     [],
   );
@@ -67,7 +67,7 @@ export default function GanttMinScaleUnit({ skinSettings }) {
     if (scaleOption == 3) return allScales.slice(0, 3);
     return allScales;
   }, [scaleOption, allScales]);
-  
+
   const registeredRef = useRef(false);
   if (!registeredRef.current) {
     registerScaleUnit('sprint', {
@@ -128,8 +128,8 @@ export default function GanttMinScaleUnit({ skinSettings }) {
           links={data.links}
           scales={scales}
           zoom={true}
-          start={new Date(2024, 3, 1)}
-          end={new Date(2024, 5, 1)}
+          start={new Date(2026, 3, 1)}
+          end={new Date(2026, 5, 1)}
           cellWidth={60}
         />
       </div>

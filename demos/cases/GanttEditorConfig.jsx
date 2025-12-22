@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { getData } from '../data';
-import { Gantt, Editor, defaultEditorItems } from '../../src';
+import { Gantt, Editor, getEditorItems } from '../../src';
 
 function GanttEditorConfig({ skinSettings }) {
   const data = useMemo(() => getData(), []);
@@ -24,12 +24,14 @@ function GanttEditorConfig({ skinSettings }) {
     [],
   );
 
+  const defaultEditorItems = useMemo(() => getEditorItems(), []);
+
   const items = useMemo(
     () =>
       keys.map((key) => ({
         ...defaultEditorItems.find((op) => op.key === key),
       })),
-    [keys],
+    [keys, defaultEditorItems],
   );
 
   return (
@@ -41,14 +43,16 @@ function GanttEditorConfig({ skinSettings }) {
         links={data.links}
         scales={data.scales}
       />
-      {api && <Editor
-        api={api}
-        items={items}
-        bottomBar={bottomBar}
-        topBar={false}
-        placement="modal"
-        autoSave={false}
-      />}
+      {api && (
+        <Editor
+          api={api}
+          items={items}
+          bottomBar={bottomBar}
+          topBar={false}
+          placement="modal"
+          autoSave={false}
+        />
+      )}
     </>
   );
 }

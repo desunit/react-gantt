@@ -1,11 +1,6 @@
 import { useState, useMemo } from 'react';
 import { getData } from '../data';
-import {
-  Gantt,
-  Editor,
-  defaultEditorItems,
-  registerEditorItem,
-} from '../../src';
+import { Gantt, Editor, getEditorItems, registerEditorItem } from '../../src';
 import { Tasklist } from '@svar-ui/react-tasklist';
 
 registerEditorItem('tasks', Tasklist);
@@ -71,7 +66,7 @@ export default function GanttEditorTasks({ skinSettings }) {
 
   const items = useMemo(() => {
     const keys = ['text', 'details'];
-    const items = defaultEditorItems.filter((op) => keys.indexOf(op.key) >= 0);
+    const items = getEditorItems().filter((op) => keys.indexOf(op.key) >= 0);
     items.push({
       key: 'tasks',
       comp: 'tasks',

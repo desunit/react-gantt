@@ -8,12 +8,12 @@ import {
 } from 'react';
 import CellGrid from './CellGrid.jsx';
 import Bars from './Bars.jsx';
-import Links from './Links.jsx';
 import { hotkeys } from '@svar-ui/grid-store';
 import storeContext from '../../context';
 import { useStore, useStoreWithCounter } from '@svar-ui/lib-react';
 import './Chart.css';
-import TimeScales from '../TimeScale.jsx';
+import TimeScales from './TimeScale.jsx';
+import { useRenderTime } from '../../helpers/debug.js';
 
 function Chart(props) {
   const {
@@ -27,15 +27,14 @@ function Chart(props) {
 
   const api = useContext(storeContext);
 
-  const [selected, selectedCounter] = useStoreWithCounter(api, "_selected");
-  const rScrollLeft = useStore(api, "scrollLeft");
-  const rScrollTop = useStore(api, "scrollTop");
-  const cellHeight = useStore(api, "cellHeight");
-  const cellWidth = useStore(api, "cellWidth");
-  const scales = useStore(api, "_scales");
-  const markers = useStore(api, "_markers");
-  const rScrollTask = useStore(api, "_scrollTask");
-  const zoom = useStore(api, "zoom");
+  const [selected, selectedCounter] = useStoreWithCounter(api, '_selected');
+  const rScrollTop = useStore(api, 'scrollTop');
+  const cellHeight = useStore(api, 'cellHeight');
+  const cellWidth = useStore(api, 'cellWidth');
+  const scales = useStore(api, '_scales');
+  const markers = useStore(api, '_markers');
+  const rScrollTask = useStore(api, '_scrollTask');
+  const zoom = useStore(api, 'zoom');
 
   const [chartHeight, setChartHeight] = useState();
   const chartRef = useRef(null);
@@ -95,7 +94,7 @@ function Chart(props) {
 
   useEffect(() => {
     dataRequest();
-  }, [chartHeight, rScrollTop, rScrollLeft]);
+  }, [chartHeight, rScrollTop]);
 
   const showTask = useCallback(
     (value) => {
@@ -110,20 +109,19 @@ function Chart(props) {
       const task = api.getTask(id);
       if (task.$x + task.$w < el.scrollLeft) {
         api.exec('scroll-chart', { left: task.$x - (cellWidth || 0) });
-        el.scrollLeft = task.$x - (cellWidth || 0)
+        el.scrollLeft = task.$x - (cellWidth || 0);
       } else if (task.$x >= clientWidth + el.scrollLeft) {
         const width = clientWidth < task.$w ? cellWidth || 0 : task.$w;
         api.exec('scroll-chart', { left: task.$x - clientWidth + width });
         el.scrollLeft = task.$x - clientWidth + width;
       }
     },
-    [api, cellWidth, rScrollLeft],
+    [api, cellWidth],
   );
 
   useEffect(() => {
     showTask(rScrollTask);
   }, [rScrollTask]);
-
 
   function onWheel(e) {
     if (zoom && (e.ctrlKey || e.metaKey)) {
@@ -156,10 +154,13 @@ function Chart(props) {
       : null;
   }, [scales, highlightTime]);
 
-  const handleHotkey = useCallback((ev) => {
-    ev.eventSource = 'chart';
-    api.exec('hotkey', ev);
-  }, [api]);
+  const handleHotkey = useCallback(
+    (ev) => {
+      ev.eventSource = 'chart';
+      api.exec('hotkey', ev);
+    },
+    [api],
+  );
 
   useEffect(() => {
     const el = chartRef.current;
@@ -201,8 +202,10 @@ function Chart(props) {
     return () => {
       node.removeEventListener('wheel', handler);
     };
-  }, [onWheel])
+  }, [onWheel]);
 
+  useRenderTime("chart");
+  
   return (
     <div
       className="wx-mR7v2Xag wx-chart"
@@ -210,7 +213,7 @@ function Chart(props) {
       ref={chartRef}
       onScroll={onScroll}
     >
-      <TimeScales highlightTime={highlightTime} scales={scales} />  
+      <TimeScales highlightTime={highlightTime} scales={scales} />
       {markers && markers.length ? (
         <div
           className="wx-mR7v2Xag wx-markers"
@@ -219,7 +222,7 @@ function Chart(props) {
           {markers.map((marker, i) => (
             <div
               key={i}
-              className={`wx-mR7v2Xag wx-marker ${marker.css || 'wx-default'}`}
+              className={`wx-mR7v2Xag wx-marker ${marker.css || ''}`}
               style={{ left: `${marker.left}px` }}
             >
               <div className="wx-mR7v2Xag wx-content">{marker.text}</div>
@@ -256,18 +259,17 @@ function Chart(props) {
 
         {selected && selected.length
           ? selected.map((obj, index) =>
-            obj.$y ? (
-              <div
-                key={obj.id}
-                className="wx-mR7v2Xag wx-selected"
-                data-id={obj.id}
-                style={selectStyle[index]}
-              ></div>
-            ) : null,
-          )
+              obj.$y ? (
+                <div
+                  key={obj.id}
+                  className="wx-mR7v2Xag wx-selected"
+                  data-id={obj.id}
+                  style={selectStyle[index]}
+                ></div>
+              ) : null,
+            )
           : null}
 
-        <Links />
         <Bars readonly={readonly} taskTemplate={taskTemplate} />
       </div>
     </div>

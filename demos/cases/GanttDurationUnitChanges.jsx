@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { getData } from '../data';
-import { Gantt, ContextMenu, Editor, defaultEditorItems } from '../../src';
+import { Gantt, ContextMenu, Editor, getEditorItems } from '../../src';
 import { RadioButtonGroup } from '@svar-ui/react-core';
 import './GanttDurationUnitChanges.css';
 
@@ -18,18 +18,18 @@ export default function GanttDurationUnitChanges({ skinSettings }) {
   );
 
   const options = [
-    { id: 'hour', label: 'Hour' },
     { id: 'day', label: 'Day' },
+    { id: 'hour', label: 'Hour' },
   ];
 
-  const [durationUnit, setDurationUnit] = useState('hour');
-  const [scales, setScales] = useState(scalesMap['hour']);
+  const [durationUnit, setDurationUnit] = useState('day');
+  const [scales, setScales] = useState(scalesMap['day']);
 
   const [api, setApi] = useState(null);
 
   const items = useMemo(
     () =>
-      defaultEditorItems.map((ed) => ({
+      getEditorItems().map((ed) => ({
         ...ed,
         ...(ed.comp === 'date' && {
           config: { time: durationUnit === 'hour' },

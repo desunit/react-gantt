@@ -1,27 +1,21 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { getData } from '../data';
-import { Gantt, defaultColumns, Editor } from '../../src/';
+import { Gantt, defaultColumns } from '../../src/';
 import { Field, Switch } from '@svar-ui/react-core';
 import './GanttPreventActions.css';
 
 function GanttPreventActions({ skinSettings }) {
   const data = useMemo(() => getData(), []);
 
-  const [edit, setEdit] = useState(true); // if false - cannot add and edit task
+  const [add, setAdd] = useState(true); // if false - cannot add and edit task
   const [drag, setDrag] = useState(true); // if false - cannot drag tasks on scale
   const [order, setOrder] = useState(true); // if false - cannot reorder tasks in grid
   const [newLink, setNewLink] = useState(true); // if false - cannot create new links
+  const [deleteLink, setDeleteLink] = useState(true); // if false - cannot delete links
+  const [progress, setProgress] = useState(true); // if false - cannot edit progress in chart
 
-  const ignoreRef = useRef(false);
-  const [api, setApi] = useState();
-
-  const editRef = useRef(edit);
   const dragRef = useRef(drag);
   const orderRef = useRef(order);
-
-  useEffect(() => {
-    editRef.current = edit;
-  }, [edit]);
 
   useEffect(() => {
     dragRef.current = drag;
@@ -32,9 +26,6 @@ function GanttPreventActions({ skinSettings }) {
   }, [order]);
 
   const init = useCallback((gApi) => {
-    setApi(gApi);
-
-    gApi.intercept('show-editor', () => editRef.current || ignoreRef.current);
     gApi.intercept('drag-task', (ev) => {
       if (typeof ev.top !== 'undefined') return orderRef.current;
       return dragRef.current; // ev.width && ev.left
@@ -43,66 +34,46 @@ function GanttPreventActions({ skinSettings }) {
 
   const columns = useMemo(
     () =>
-      edit ? defaultColumns : defaultColumns.filter((a) => a.id != 'add-task'),
-    [edit],
+      add ? defaultColumns : defaultColumns.filter((a) => a.id != 'add-task'),
+    [add],
   );
-
-  // for demo purposes: close editor when checkbox is unchecked
-  useEffect(() => {
-    if (!edit) {
-      ignoreRef.current = true;
-      api.exec('show-editor', { id: null });
-      ignoreRef.current = false;
-    }
-  }, [edit, api]);
 
   return (
     <div className="wx-RPSbwjNq rows">
       <div className="wx-RPSbwjNq bar">
-        <Field label="Adding and editing" position={'left'}>
-          {({ id }) => (
-            <Switch
-              value={edit}
-              onChange={({ value }) => setEdit(value)}
-              id={id}
-            />
-          )}
+        <Field label="Adding tasks" position={'left'}>
+          <Switch value={add} onChange={({ value }) => setAdd(value)} />
         </Field>
         <Field label="Creating links" position={'left'}>
-          {({ id }) => (
-            <Switch
-              value={newLink}
-              onChange={({ value }) => setNewLink(value)}
-              id={id}
-            />
-          )}
+          <Switch value={newLink} onChange={({ value }) => setNewLink(value)} />
+        </Field>
+        <Field label="Deleting links" position={'left'}>
+          <Switch
+            value={deleteLink}
+            onChange={({ value }) => setDeleteLink(value)}
+          />
         </Field>
         <Field label="Dragging tasks" position={'left'}>
-          {({ id }) => (
-            <Switch
-              value={drag}
-              onChange={({ value }) => setDrag(value)}
-              id={id}
-            />
-          )}
+          <Switch value={drag} onChange={({ value }) => setDrag(value)} />
         </Field>
         <Field label="Reordering tasks" position={'left'}>
-          {({ id }) => (
-            <Switch
-              value={order}
-              onChange={({ value }) => setOrder(value)}
-              id={id}
-            />
-          )}
+          <Switch value={order} onChange={({ value }) => setOrder(value)} />
+        </Field>
+        <Field label="Editing progress" position={'left'}>
+          <Switch
+            value={progress}
+            onChange={({ value }) => setProgress(value)}
+          />
         </Field>
       </div>
       <div
         className={
           'wx-RPSbwjNq ' +
           ('gantt' +
-            (!edit ? ' hide-progress' : '') +
             (!newLink ? ' hide-links' : '') +
-            (!drag ? ' hide-drag' : ''))
+            (!deleteLink ? ' hide-delete-links' : '') +
+            (!drag ? ' hide-drag' : '') +
+            (!progress ? ' hide-progress' : ''))
         }
       >
         <Gantt
@@ -113,7 +84,6 @@ function GanttPreventActions({ skinSettings }) {
           scales={data.scales}
           columns={columns}
         />
-        {api && <Editor api={api} />}
       </div>
     </div>
   );

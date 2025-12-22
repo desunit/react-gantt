@@ -6,8 +6,8 @@ import './GanttStartEnd.css';
 
 export default function GanttStartEnd({ skinSettings }) {
   const data = useMemo(() => getData(), []);
-  const [start, setStart] = useState(new Date(2024, 3, 5));
-  const [end, setEnd] = useState(new Date(2024, 4, 1));
+  const [start, setStart] = useState(new Date(2026, 3, 5));
+  const [end, setEnd] = useState(new Date(2026, 4, 1));
   const [autoScale, setAutoScale] = useState(false);
 
   return (
@@ -15,33 +15,21 @@ export default function GanttStartEnd({ skinSettings }) {
       <Locale>
         <div className="wx-FJQN2sNt bar">
           <Field label="Start" position="left">
-            {({ id }) => (
-              <DatePicker
-                value={start}
-                id={id}
-                onChange={({ value }) => setStart(value)}
-              />
-            )}
+            <DatePicker
+              value={start}
+              onChange={({ value }) => setStart(value)}
+            />
           </Field>
           <Field label="End" position="left">
-            {({ id }) => (
-              <DatePicker
-                value={end}
-                id={id}
-                onChange={({ value }) => setEnd(value)}
-              />
-            )}
+            <DatePicker value={end} onChange={({ value }) => setEnd(value)} />
           </Field>
           <Field label="autoScale" position="left">
-            {({ id }) => (
-              <div className="wx-FJQN2sNt input">
-                <Switch
-                  value={autoScale}
-                  id={id}
-                  onChange={({ value }) => setAutoScale(value)}
-                />
-              </div>
-            )}
+            <div className="wx-FJQN2sNt input">
+              <Switch
+                value={autoScale}
+                onChange={({ value }) => setAutoScale(value)}
+              />
+            </div>
           </Field>
         </div>
       </Locale>

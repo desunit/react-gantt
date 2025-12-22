@@ -17,7 +17,9 @@
   overflow: hidden;
 }
 
-.wx-bar.wx-GKbcLEGA {
+.wx-bar.wx-GKbcLEGA,
+.wx-bar.wx-GKbcLEGA .wx-segment {
+  pointer-events: all;
   box-sizing: border-box;
   position: absolute;
   border-radius: var(--wx-gantt-bar-border-radius);
@@ -37,22 +39,24 @@
 .wx-bar.wx-reorder-task.wx-GKbcLEGA {
   z-index: 3;
 }
-.wx-content.wx-GKbcLEGA {
+.wx-bar.wx-GKbcLEGA .wx-content {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.wx-task.wx-GKbcLEGA {
+.wx-task:not(.wx-split).wx-GKbcLEGA,
+.wx-task.wx-GKbcLEGA .wx-segment {
   color: var(--wx-gantt-task-font-color);
   background-color: var(--wx-gantt-task-color);
   border: var(--wx-gantt-task-border);
 }
 
-.wx-task.wx-selected.wx-GKbcLEGA {
+.wx-task.wx-selected:not(.wx-split).wx-GKbcLEGA {
   border: 1px solid var(--wx-gantt-task-border-color);
   box-shadow: var(--wx-gantt-bar-shadow);
 }
 
-.wx-task:hover.wx-GKbcLEGA {
+.wx-task:not(.wx-split):hover.wx-GKbcLEGA,
+.wx-task.wx-GKbcLEGA .wx-segment:hover {
   box-shadow: var(--wx-gantt-bar-shadow);
 }
 
@@ -71,7 +75,7 @@
   box-shadow: var(--wx-gantt-bar-shadow);
 }
 
-.wx-milestone .wx-content.wx-GKbcLEGA {
+.wx-milestone.wx-GKbcLEGA .wx-content {
   position: absolute;
   top: 0;
   left: 0;
@@ -80,7 +84,7 @@
   z-index: 2;
 }
 
-.wx-bar:not(.wx-milestone) .wx-content.wx-GKbcLEGA {
+.wx-bar:not(.wx-milestone).wx-GKbcLEGA .wx-content {
   position: relative;
   z-index: 2;
 }
@@ -97,19 +101,19 @@
   border-color: var(--wx-gantt-milestone-color);
 }
 
-.wx-milestone .wx-text-out.wx-GKbcLEGA {
+.wx-milestone.wx-GKbcLEGA .wx-text-out {
   padding: 0 2px;
   left: 100%;
 }
 
-.wx-milestone .wx-content.wx-GKbcLEGA {
+.wx-milestone.wx-GKbcLEGA .wx-content {
   height: 100%;
   background-color: var(--wx-gantt-milestone-color);
   transform: rotate(45deg) scale(0.75);
   border-radius: var(--wx-gantt-milestone-border-radius);
 }
 
-.wx-progress-wrapper.wx-GKbcLEGA {
+.wx-bar.wx-GKbcLEGA .wx-progress-wrapper {
   position: absolute;
   width: 100%;
   height: 100%;
@@ -118,7 +122,7 @@
   overflow: hidden;
 }
 
-.wx-progress-percent.wx-GKbcLEGA {
+.wx-bar.wx-GKbcLEGA .wx-progress-percent {
   height: 100%;
 }
 
@@ -190,14 +194,28 @@
   pointer-events: none;
 }
 
+.wx-bar.wx-GKbcLEGA button.wx-button.wx-delete-button {
+  position: absolute;
+  z-index: 4;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  padding: 0;
+}
+.wx-delete-button-icon {
+  display: block;
+  line-height: 14px;
+  font-size: 10px;
+}
+.wx-bar.wx-GKbcLEGA .wx-delete-button.wx-left,
 .wx-link.wx-left.wx-GKbcLEGA {
   left: -16px;
 }
-
+.wx-bar.wx-GKbcLEGA .wx-delete-button.wx-right,
 .wx-link.wx-right.wx-GKbcLEGA {
   right: -16px;
 }
-
 .wx-link.wx-target:hover.wx-GKbcLEGA,
 .wx-link.wx-selected.wx-GKbcLEGA,
 .wx-bar:hover .wx-link.wx-target.wx-GKbcLEGA,
@@ -206,11 +224,10 @@
   cursor: pointer;
 }
 
-.wx-link.wx-selected.wx-GKbcLEGA {
+.wx-bar:not(.wx-split).wx-GKbcLEGA .wx-link.wx-selected {
   border-color: inherit;
 }
-
-.wx-link.wx-selected .wx-inner.wx-GKbcLEGA {
+.wx-bar:not(.wx-split).wx-GKbcLEGA .wx-link.wx-selected .wx-inner {
   border-color: inherit;
 }
 
@@ -234,4 +251,56 @@
 .wx-milestone:focus .wx-content.wx-GKbcLEGA {
   outline: 1px solid var(--wx-color-primary);
   outline-offset: 1.6px;
+}
+/* critical path markers */
+.wx-task.wx-critical.wx-GKbcLEGA {
+  background-color: var(--wx-gantt-task-critical-color);
+}
+.wx-task.wx-critical.wx-selected.wx-GKbcLEGA {
+  border: 1px solid var(--wx-gantt-task-critical-color);
+}
+.wx-task.wx-critical .wx-progress-percent {
+  background-color: var(--wx-gantt-task-critical-fill-color);
+}
+.wx-milestone.wx-critical.wx-GKbcLEGA .wx-content {
+  background-color: var(--wx-gantt-critical-color);
+}
+.wx-milestone.wx-critical.wx-GKbcLEGA {
+  border-color: var(--wx-gantt-critical-color);
+}
+.wx-summary.wx-critical.wx-GKbcLEGA {
+  background-color: var(--wx-gantt-summary-critical-color);
+}
+.wx-summary.wx-critical .wx-progress-percent {
+  background-color: var(--wx-gantt-summary-critical-fill-color);
+}
+.wx-summary.wx-critical.wx-selected.wx-GKbcLEGA {
+  border: 1px solid var(--wx-gantt-summary-critical-color);
+}
+
+/*split tasks*/
+.wx-split.wx-selected.wx-GKbcLEGA {
+  border-color: var(--wx-gantt-task-border-color);
+}
+.wx-bars.wx-GKbcLEGA .wx-split.wx-bar {
+  background: transparent;
+  border-color: transparent;
+}
+.wx-split.wx-GKbcLEGA .wx-link.wx-selected,
+.wx-split.wx-GKbcLEGA .wx-link.wx-selected .wx-inner {
+  border-color: var(--wx-gantt-task-border-color);
+}
+
+.wx-critical.wx-GKbcLEGA .wx-segment {
+  background-color: var(--wx-gantt-task-critical-color);
+}
+.wx-critical.wx-selected.wx-GKbcLEGA .wx-segment {
+  border: 1px solid var(--wx-gantt-task-critical-color);
+}
+.wx-critical.wx-GKbcLEGA .wx-segment .wx-progress-percent {
+  background-color: var(--wx-gantt-task-critical-fill-color);
+}
+.wx-critical.wx-split.wx-GKbcLEGA .wx-link.wx-selected,
+.wx-critical.wx-split.wx-GKbcLEGA .wx-link.wx-selected .wx-inner {
+  border-color: var(--wx-gantt-task-critical-color);
 }

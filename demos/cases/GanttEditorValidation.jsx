@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { getData } from '../data';
-import { Gantt, Editor, defaultEditorItems } from '../../src';
+import { Gantt, Editor, getEditorItems } from '../../src';
 
 function GanttEditorValidation({ skinSettings }) {
   const data = useMemo(() => getData(), []);
@@ -8,7 +8,7 @@ function GanttEditorValidation({ skinSettings }) {
 
   const items = useMemo(
     () =>
-      defaultEditorItems.map((ed) => ({
+      getEditorItems().map((ed) => ({
         ...ed,
         ...(ed.comp === 'text' && { required: true }),
         ...(ed.comp === 'counter' && {

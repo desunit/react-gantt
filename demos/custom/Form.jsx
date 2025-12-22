@@ -65,68 +65,50 @@ export default function Form(props) {
         </div>
         <div className="wx-QkE5vh0y body">
           <Field label="Name">
-            {({ id }) => (
-              <Text
-                id={id}
-                focus={true}
-                value={task.text}
-                onChange={(ev) => handleChange(ev, 'text')}
-              />
-            )}
+            <Text
+              focus={true}
+              value={task.text}
+              onChange={(ev) => handleChange(ev, 'text')}
+            />
           </Field>
 
           <Field label="Description">
-            {({ id }) => (
-              <TextArea
-                id={id}
-                value={task.details}
-                onChange={(ev) => handleChange(ev, 'details')}
-              />
-            )}
+            <TextArea
+              value={task.details}
+              onChange={(ev) => handleChange(ev, 'details')}
+            />
           </Field>
 
           {taskTypes.length > 1 ? (
             <Field label="Type">
-              {({ id }) => (
-                <Select
-                  id={id}
-                  value={task.type}
-                  options={taskTypes}
-                  onChange={(ev) => handleChange(ev, 'type')}
-                />
-              )}
+              <Select
+                value={task.type}
+                options={taskTypes}
+                onChange={(ev) => handleChange(ev, 'type')}
+              />
             </Field>
           ) : null}
 
           <Field label="Start date">
-            {({ id }) => (
-              <DatePicker
-                id={id}
-                value={task.start}
-                onChange={(ev) => handleChange(ev, 'start')}
-              />
-            )}
+            <DatePicker
+              value={task.start}
+              onChange={(ev) => handleChange(ev, 'start')}
+            />
           </Field>
 
           {task.type !== 'milestone' ? (
             <>
               <Field label="End date">
-                {({ id }) => (
-                  <DatePicker
-                    id={id}
-                    value={task.end}
-                    onChange={(ev) => handleChange(ev, 'end')}
-                  />
-                )}
+                <DatePicker
+                  value={task.end}
+                  onChange={(ev) => handleChange(ev, 'end')}
+                />
               </Field>
               <Field label={`Progress: ${task.progress}%`}>
-                {({ id }) => (
-                  <Slider
-                    id={id}
-                    value={task.progress}
-                    onChange={(ev) => handleChange(ev, 'progress')}
-                  />
-                )}
+                <Slider
+                  value={task.progress}
+                  onChange={(ev) => handleChange(ev, 'progress')}
+                />
               </Field>
             </>
           ) : null}

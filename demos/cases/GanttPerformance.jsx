@@ -4,33 +4,59 @@ import { Gantt } from '../../src/';
 import { Button } from '@svar-ui/react-core';
 import './GanttPerformance.css';
 
+function RenderTime({ start }){
+  const [end, setEnd] = useState(null);
+  const [label, setLabel] = useState('')
+
+  let active = useRef(true);
+  useEffect(() => {
+    if (start && end) {
+       setLabel((end - start)+" ms");
+    }
+
+    active.current = true;
+    setTimeout(() => {
+      active.current = false;
+    }, 1000);
+  }, [start, end]);
+  
+  window.__RENDER_METRICS_ENABLED__ = true;
+  useEffect(() => {
+    window.addEventListener('render-metric', (e) => {
+      if (!active.current) return;
+      if (e.detail.label === "chart") {
+        setEnd(new Date());
+      }
+    });
+
+    return () => {
+      delete window.__RENDER_METRICS_ENABLED__
+    };
+  }, []);
+  
+  
+  return <span>{label}</span>
+}
+
+const count = 10000;
+const years = 3;
+const data = getGeneratedData('', count, years);
+
 function GanttPerformance(props) {
   const { skinSettings } = props;
-
-  const count = 1000;
-  const years = 3;
-  const data = useMemo(() => getGeneratedData('', count, years), []);
-
   const [start, setStart] = useState(null);
-  const outAreaRef = useRef(null);
-
-  useEffect(() => {
-    if (start && outAreaRef.current) {
-      outAreaRef.current.innerHTML = new Date() - start;
-    }
-  }, [start]);
 
   return (
     <div className="wx-KB3Eoqwm rows">
       <div className="wx-KB3Eoqwm row">
         {start ? (
           <>
-            1 000 tasks ({years} years ) rendered in{' '}
-            <span ref={outAreaRef}></span> ms
+            10 000 tasks ({years} years ) rendered in{' '}
+            <RenderTime start={start} />
           </>
         ) : (
-          <Button type="primary" onClick={() => setStart(new Date())}>
-            Press me to render Gantt chart with 1 000 tasks
+            <Button type="primary" onClick={() => setStart(new Date()) }>
+            Press me to render Gantt chart with 10 000 tasks
           </Button>
         )}
       </div>

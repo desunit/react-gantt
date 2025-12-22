@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Gantt,
   Editor,
-  defaultEditorItems,
   registerEditorItem,
   defaultTaskTypes,
+  getEditorItems,
 } from '../../src';
 import { RadioButtonGroup } from '@svar-ui/react-core';
 import UsersCustomCombo from '../custom/UsersCustomCombo.jsx';
@@ -18,6 +18,8 @@ export default function GanttEditorCustomControls({ skinSettings }) {
   }, []);
 
   const items = useMemo(() => {
+    const defaultEditorItems = getEditorItems();
+
     const items = defaultEditorItems.map((item) => ({ ...item }));
     items.splice(
       defaultEditorItems.findIndex((d) => d.key === 'type'),

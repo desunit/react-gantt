@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useContext } from 'react';
 import { Editor as WxEditor, registerEditorItem } from '@svar-ui/react-editor';
 import { Locale, RichSelect, Slider, Counter, TwoState } from '@svar-ui/react-core';
-import { defaultEditorItems, normalizeDates } from '@svar-ui/gantt-store';
+import { getEditorItems, prepareEditTask } from '@svar-ui/gantt-store';
 import { dateToString, locale } from '@svar-ui/lib-dom';
 import { en } from '@svar-ui/gantt-locales';
 import { en as coreEn } from '@svar-ui/core-locales';
@@ -9,7 +9,7 @@ import { context } from '@svar-ui/react-core';
 
 import Links from './editor/Links.jsx';
 import DateTimePicker from './editor/DateTimePicker.jsx';
-import { useStore, useWritableProp } from '@svar-ui/lib-react';
+import { useStore } from '@svar-ui/lib-react';
 
 // helpers
 import { modeObserver } from '../helpers/modeResizeObserver';
@@ -25,7 +25,7 @@ registerEditorItem('links', Links);
 
 function Editor({
   api,
-  items = defaultEditorItems,
+  items = [],
   css = '',
   layout = 'default',
   readonly = false,
@@ -34,6 +34,7 @@ function Editor({
   topBar = true,
   autoSave = true,
   focus = false,
+  hotkeys = {},
 }) {
   const lFromCtx = useContext(context.i18n);
   const l = useMemo(() => lFromCtx || locale({ ...en, ...coreEn }), [lFromCtx]);
@@ -91,28 +92,70 @@ function Editor({
     };
   }, [handleResize]);
 
-  const activeTask = useStore(api, "_activeTask");
-  // const taskId = useStore(api, "activeTaskId");
-  const taskId = useMemo(() => activeTask?.id, [activeTask]);
-  const unit = useStore(api, "durationUnit");
-  const unscheduledTasks = useStore(api, "unscheduledTasks");
-  const taskTypes = useStore(api, "taskTypes");
+  const activeTask = useStore(api, '_activeTask');
+  const taskId = useStore(api, 'activeTask');
+  const unscheduledTasks = useStore(api, 'unscheduledTasks');
+  const links = useStore(api, 'links');
+  const splitTasks = useStore(api, 'splitTasks');
+  const segmentIndex = useMemo(
+    () => splitTasks && taskId?.segmentIndex,
+    [splitTasks, taskId],
+  );
+  const isSegment = useMemo(
+    () => segmentIndex || segmentIndex === 0,
+    [segmentIndex],
+  );
+  const baseItems = useMemo(
+    () => getEditorItems({ unscheduledTasks }),
+    [unscheduledTasks],
+  );
+  const undo = useStore(api, 'undo');
 
-  const [taskType, setTaskType] = useWritableProp(activeTask?.type);
-  const taskUnscheduled = useMemo(() => activeTask?.unscheduled, [activeTask]);
   const [linksActionsMap, setLinksActionsMap] = useState({});
+  const [inProgress, setInProgress] = useState(null);
+  const [editorValues, setEditorValues] = useState();
+  const [editorErrors, setEditorErrors] = useState(null);
 
+  const taskTypes = useStore(api, 'taskTypes');
+
+  const task = useMemo(() => {
+    if (!activeTask) return null;
+    let data;
+    if (isSegment && activeTask.segments)
+      data = { ...activeTask.segments[segmentIndex] };
+    else data = { ...activeTask };
+
+    if (readonly) {
+      // preserve parent to differentiate between segment and task
+      let values = { parent: data.parent };
+      baseItems.forEach(({ key, comp }) => {
+        if (comp !== 'links') {
+          const value = data[key];
+          if (comp === 'date' && value instanceof Date) {
+            values[key] = dateFormat(value);
+          } else if (comp === 'slider' && key === 'progress') {
+            values[key] = `${value}%`;
+          } else {
+            values[key] = value;
+          }
+        }
+      });
+      return values;
+    }
+    return data || null;
+  }, [activeTask, isSegment, segmentIndex, readonly, baseItems, dateFormat]);
+
+  useEffect(() => {
+    setEditorValues(task);
+  }, [task]);
 
   useEffect(() => {
     setLinksActionsMap({});
+    setEditorErrors(null);
+    setInProgress(null);
   }, [taskId]);
 
-  const milestone = useMemo(() => taskType === 'milestone', [taskType]);
-  const summary = useMemo(() => taskType === 'summary', [taskType]);
-
-  function prepareEditorItems(localItems, isUnscheduled) {
-    const dates = { start: 1, end: 1, duration: 1 };
-
+  function prepareEditorItems(localItems, taskData) {
     return localItems.map((a) => {
       const item = { ...a };
       if (a.config) item.config = { ...item.config };
@@ -122,7 +165,7 @@ function Editor({
         item.onLinksChange = handleLinksChange;
       }
       if (item.comp === 'select' && item.key === 'type') {
-        let options = item.options ?? (taskTypes ? taskTypes : []);
+        const options = item.options ?? (taskTypes ? taskTypes : []);
         item.options = options.map((t) => ({
           ...t,
           label: _(t.label),
@@ -137,78 +180,28 @@ function Editor({
       if (item.config?.placeholder)
         item.config.placeholder = _(item.config.placeholder);
 
-      if (unscheduledTasks && dates[item.key]) {
-        if (isUnscheduled) {
+      if (taskData) {
+        if (item.isDisabled && item.isDisabled(taskData, api.getState())) {
           item.disabled = true;
-        } else {
-          delete item.disabled;
-        }
+        } else delete item.disabled;
       }
-
       return item;
     });
   }
 
-  function filterEditorItems(localItems) {
-    return localItems.filter(({ comp, key, options }) => {
-      switch (comp) {
-        case 'date': {
-          return (
-            (!milestone || (key !== 'end' && key !== 'base_end')) && !summary
-          );
-        }
-        case 'select': {
-          return options.length > 1;
-        }
-        case 'twostate': {
-          return unscheduledTasks && !summary;
-        }
-        case 'counter': {
-          return !summary && !milestone;
-        }
-        case 'slider': {
-          return !milestone;
-        }
-        default:
-          return true;
-      }
-    });
-  }
-
   const editorItems = useMemo(() => {
-    const eItems = prepareEditorItems(items, taskUnscheduled);
-    return filterEditorItems(eItems);
-  }, [
-    items,
-    taskUnscheduled,
-    milestone,
-    summary,
-    unscheduledTasks,
-    taskTypes,
-    _,
-    api,
-    autoSave,
-  ]);
+    let eItems = items.length ? items : baseItems;
+    eItems = prepareEditorItems(eItems, editorValues);
+    if (!editorValues) return eItems;
+    return eItems.filter(
+      (item) => !item.isHidden || !item.isHidden(editorValues, api.getState()),
+    );
+  }, [items, baseItems, editorValues, taskTypes, _, api, autoSave]);
 
-  const task = useMemo(() => {
-    if (readonly && activeTask) {
-      let values = {};
-      editorItems.forEach(({ key, comp }) => {
-        if (comp !== 'links') {
-          const value = activeTask[key];
-          if (comp === 'date' && value instanceof Date) {
-            values[key] = dateFormat(value);
-          } else if (comp === 'slider' && key === 'progress') {
-            values[key] = `${value}%`;
-          } else {
-            values[key] = value;
-          }
-        }
-      });
-      return values;
-    }
-    return activeTask ? { ...activeTask } : null;
-  }, [readonly, activeTask, editorItems, dateFormat]);
+  const editorKeys = useMemo(
+    () => editorItems.map((i) => i.key),
+    [editorItems],
+  );
 
   function handleLinksChange({ id, action, data }) {
     setLinksActionsMap((prev) => ({
@@ -219,64 +212,147 @@ function Editor({
 
   const saveLinks = useCallback(() => {
     for (let link in linksActionsMap) {
-      const { action, data } = linksActionsMap[link];
-      api.exec(action, data);
+      if (links.byId(link)) {
+        const { action, data } = linksActionsMap[link];
+        api.exec(action, data);
+      }
     }
-  }, [api, linksActionsMap]);
+  }, [api, linksActionsMap, links]);
 
   const deleteTask = useCallback(() => {
-    api.exec('delete-task', { id: taskId });
-  }, [api, taskId]);
+    const id = taskId?.id || taskId;
+    if (isSegment) {
+      if (activeTask?.segments) {
+        const segments = activeTask.segments.filter(
+          (s, index) => index !== segmentIndex,
+        );
+        api.exec('update-task', {
+          id,
+          task: { segments },
+        });
+      }
+    } else {
+      api.exec('delete-task', { id });
+    }
+  }, [api, taskId, isSegment, activeTask, segmentIndex]);
 
   const hide = useCallback(() => {
     api.exec('show-editor', { id: null });
   }, [api]);
 
-  const handleAction = useCallback((ev) => {
-    const { item, changes } = ev;
-    if (item.id === 'delete') {
-      deleteTask();
-    }
-    if (item.id === 'save') {
-      if (!changes.length) saveLinks();
-      else hide();
-    }
-    if (item.comp) hide();
-  }, [api, taskId, autoSave, saveLinks, deleteTask, hide]);
+  const handleAction = useCallback(
+    (ev) => {
+      const { item, changes } = ev;
+      if (item.id === 'delete') {
+        deleteTask();
+      }
+      if (item.id === 'save') {
+        if (!changes.length) saveLinks();
+        else hide();
+      }
+      if (item.comp) hide();
+    },
+    [api, taskId, autoSave, saveLinks, deleteTask, hide],
+  );
 
-  const normalizeTask = useCallback((t, key) => {
-    if (unscheduledTasks && t.type === 'summary') t.unscheduled = false;
+  const normalizeTask = useCallback(
+    (t, key, input) => {
+      if (unscheduledTasks && t.type === 'summary') t.unscheduled = false;
 
-    normalizeDates(t, unit, true, key);
-    return t;
-  }, [unscheduledTasks, unit]);
+      prepareEditTask(t, api.getState(), key);
+      if (!input) setInProgress(false);
+      return t;
+    },
+    [unscheduledTasks, api],
+  );
 
-  const handleChange = useCallback((ev) => {
-    let { update, key, value } = ev;
-    ev.update = normalizeTask({ ...update }, key);
-    
-    if (!autoSave) {
-      if (key === 'type') setTaskType(value);
-    }
-  }, [api, autoSave]);
+  const save = useCallback(
+    (values) => {
+      values = {
+        ...values,
+        unscheduled:
+          unscheduledTasks && values.unscheduled && values.type !== 'summary',
+      };
+      delete values.links;
+      delete values.data;
 
-  const handleSave = useCallback((ev) => {
-    let { values } = ev;
-    values = {
-      ...values,
-      unscheduled:
-        unscheduledTasks && values.unscheduled && values.type !== 'summary',
-    };
-    delete values.links;
-    delete values.data;
+      if (
+        editorKeys.indexOf('duration') === -1 ||
+        (values.segments && !values.duration)
+      )
+        delete values.duration;
 
-    api.exec('update-task', {
-      id: taskId,
-      task: values,
-    });
+      const data = {
+        id: taskId?.id || taskId,
+        task: values,
+        ...(isSegment && { segmentIndex }),
+      };
+      if (autoSave && inProgress) data.inProgress = inProgress;
 
-    if (!autoSave) saveLinks();
-  }, [api, taskId, unscheduledTasks, autoSave, saveLinks]);
+      api.exec('update-task', data);
+
+      if (!autoSave) saveLinks();
+    },
+    [
+      api,
+      taskId,
+      unscheduledTasks,
+      autoSave,
+      saveLinks,
+      editorKeys,
+      isSegment,
+      segmentIndex,
+      inProgress,
+    ],
+  );
+
+  const handleChange = useCallback(
+    (ev) => {
+      let { update, key, input } = ev;
+
+      if (input) setInProgress(true);
+
+      ev.update = normalizeTask({ ...update }, key, input);
+
+      if (!autoSave) setEditorValues(ev.update);
+      else if (!editorErrors && !input) {
+        const item = editorItems.find((i) => i.key === key);
+        const v = update[key];
+        const isValid = !item.validation || item.validation(v);
+        if (isValid && (!item.required || v)) save(ev.update);
+      }
+    },
+    [autoSave, normalizeTask, editorErrors, editorItems, save],
+  );
+
+  const handleSave = useCallback(
+    (ev) => {
+      if (!autoSave) save(ev.values);
+    },
+    [autoSave, save],
+  );
+
+  const handleValidation = useCallback((check) => {
+    // get all errors after onchange action
+    setEditorErrors(check.errors);
+  }, []);
+
+  const defaultHotkeys = useMemo(
+    () =>
+      undo
+        ? {
+            'ctrl+z': (ev) => {
+              ev.preventDefault();
+              api.exec('undo');
+            },
+            'ctrl+y': (ev) => {
+              ev.preventDefault();
+              api.exec('redo');
+            },
+          }
+        : {},
+    [undo, api],
+  );
 
   return task ? (
     <Locale>
@@ -293,7 +369,9 @@ function Editor({
         focus={focus}
         onAction={handleAction}
         onSave={handleSave}
+        onValidation={handleValidation}
         onChange={handleChange}
+        hotkeys={hotkeys && { ...defaultHotkeys, ...hotkeys }}
       />
     </Locale>
   ) : null;

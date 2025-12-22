@@ -30,8 +30,9 @@ export default [
         localStorage: 'readonly',
         fetch: 'readonly',
         FormData: 'readonly',
-        setInterval: 'readonly',
-        clearInterval: 'readonly',
+        performance: 'readonly',
+        cancelAnimationFrame: 'readonly',
+        CustomEvent: 'readonly',
       },
     },
     plugins: {

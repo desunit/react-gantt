@@ -1,11 +1,6 @@
 import { useState, useMemo } from 'react';
 import { getData } from '../data';
-import {
-  Gantt,
-  Editor,
-  defaultEditorItems,
-  registerEditorItem,
-} from '../../src';
+import { Gantt, Editor, getEditorItems, registerEditorItem } from '../../src';
 import { Comments } from '@svar-ui/react-comments';
 registerEditorItem('comments', Comments);
 
@@ -47,7 +42,7 @@ function GanttEditorComments(props) {
   const [api, setApi] = useState();
   const keys = useMemo(() => ['text', 'details'], []);
   const items = useMemo(() => {
-    const items = defaultEditorItems.filter((op) => keys.indexOf(op.key) >= 0);
+    const items = getEditorItems().filter((op) => keys.indexOf(op.key) >= 0);
     items.push({
       key: 'comments',
       comp: 'comments',

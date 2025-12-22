@@ -22,11 +22,7 @@ function GanttLocale({ skinSettings }) {
           onChange={({ value }) => setLang(value)}
         />
       </div>
-      {lang === 'en' && (
-        <GanttWidget
-          skinSettings={skinSettings}
-        />
-      )}
+      {lang === 'en' && <GanttWidget skinSettings={skinSettings} />}
       {lang === 'cn' && (
         <Locale words={{ ...cn, ...cnCore }}>
           <GanttWidget skinSettings={skinSettings} />
@@ -42,19 +38,20 @@ function GanttWidget(props) {
   const [api, setApi] = useState(null);
   const data = useMemo(() => getData(), []);
 
-  
+  const settings = {
+    ...skinSettings,
+    tasks: data.tasks,
+    links: data.links,
+    scales: data.scales,
+    zoom: true,
+  };
+
   return (
     <>
       <Toolbar api={api} />
       <div className="wx-ycv5Oz8L gtcell">
         <ContextMenu api={api}>
-          <Gantt
-            {...skinSettings}
-            tasks={data.tasks}
-            links={data.links}
-            scales={data.scales}
-            init={setApi}
-          />
+          <Gantt {...settings} init={setApi} />
         </ContextMenu>
         {api && <Editor api={api} />}
       </div>
