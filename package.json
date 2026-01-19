@@ -1,7 +1,7 @@
 {
-  "name": "@svar-ui/react-gantt",
+  "name": "@svar-ui/react-gantt-ex",
   "version": "2.4.5",
-  "description": "A customizable, high-performance React Gantt chart component for building project timelines.",
+  "description": "A customizable, high-performance React Gantt chart component for building project timelines. Supported multi-task rows.",
   "productTag": "gantt",
   "productTrial": true,
   "type": "module",
