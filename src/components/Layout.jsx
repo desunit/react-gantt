@@ -23,6 +23,8 @@ function Layout(props) {
     cellBorders,
     highlightTime,
     onTableAPIChange,
+    multiTaskRows = false,
+    rowMapping = null,
   } = props;
 
   const api = useContext(storeContext);
@@ -91,10 +93,18 @@ function Layout(props) {
     [ganttWidth, innerWidth],
   );
   const fullWidth = useMemo(() => rScales.width, [rScales]);
-  const fullHeight = useMemo(
-    () => rTasks.length * rCellHeight,
-    [rTasks, rCellHeight],
-  );
+  const fullHeight = useMemo(() => {
+    if (!multiTaskRows || !rowMapping) {
+      return rTasks.length * rCellHeight;
+    }
+    // Count unique rows
+    const uniqueRows = new Set();
+    rTasks.forEach((task) => {
+      const rowId = rowMapping.taskRows.get(task.id) ?? task.id;
+      uniqueRows.add(rowId);
+    });
+    return uniqueRows.size * rCellHeight;
+  }, [rTasks, rCellHeight, multiTaskRows, rowMapping]);
   const scrollHeight = useMemo(
     () => rScales.height + fullHeight + scrollSize,
     [rScales, fullHeight, scrollSize],
@@ -271,6 +281,8 @@ function Layout(props) {
                   readonly={readonly}
                   fullHeight={fullHeight}
                   onTableAPIChange={onTableAPIChange}
+                  multiTaskRows={multiTaskRows}
+                  rowMapping={rowMapping}
                 />
                 <Resizer
                   value={gridWidth}
@@ -291,6 +303,8 @@ function Layout(props) {
                 taskTemplate={taskTemplate}
                 cellBorders={cellBorders}
                 highlightTime={highlightTime}
+                multiTaskRows={multiTaskRows}
+                rowMapping={rowMapping}
               />
             </div>
           </div>

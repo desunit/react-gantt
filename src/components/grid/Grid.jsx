@@ -25,6 +25,8 @@ export default function Grid(props) {
     display = 'all',
     columnWidth: columnWidthProp = 0,
     onTableAPIChange,
+    multiTaskRows = false,
+    rowMapping = null,
   } = props;
   const [columnWidth, setColumnWidthProp] = useWritableProp(columnWidthProp);
   const [tableAPI, setTableAPI] = useState();
@@ -169,6 +171,29 @@ export default function Grid(props) {
     return tasks;
   }, [tasks, dragTask]);
 
+  // Aggregate rows when multiTaskRows is enabled
+  const gridRows = useMemo(() => {
+    if (!multiTaskRows || !rowMapping) return allTasks;
+
+    const rowMap = new Map();
+    const processedRows = new Set();
+
+    allTasks.forEach((task) => {
+      const rowId = rowMapping.taskRows.get(task.id) ?? task.id;
+
+      if (!processedRows.has(rowId)) {
+        // First task in row - use its properties
+        rowMap.set(rowId, {
+          ...task,
+          $rowTasks: rowMapping.rowMap.get(rowId) || [task.id],
+        });
+        processedRows.add(rowId);
+      }
+    });
+
+    return Array.from(rowMap.values());
+  }, [allTasks, multiTaskRows, rowMapping]);
+
   const cols = useMemo(() => {
     let cols = (columnsVal || []).map((col) => {
       col = { ...col };
@@ -214,7 +239,7 @@ export default function Grid(props) {
   }, [display, width, cols]);
 
   const sortMarks = useMemo(() => {
-    if (allTasks && sortVal?.length) {
+    if (gridRows && sortVal?.length) {
       const marks = {};
       sortVal.forEach(({ key, order }, index) => {
         marks[key] = {
@@ -225,7 +250,7 @@ export default function Grid(props) {
       return marks;
     }
     return {};
-  }, [allTasks, sortVal]);
+  }, [gridRows, sortVal]);
 
   const checkFlex = useCallback(() => {
     return cols.some((c) => c.flexgrow && !c.hidden);
@@ -316,13 +341,13 @@ export default function Grid(props) {
   );
 
   const setScrollOffset = useCallback(() => {
-    if (tableRef.current && allTasks !== null) {
+    if (tableRef.current && gridRows !== null) {
       const body = tableRef.current.querySelector('.wx-body');
       if (body)
         body.style.top = -((scrollTopVal ?? 0) - (scrollDelta ?? 0)) + 'px';
     }
     if (tableContainerRef.current) tableContainerRef.current.scrollTop = 0;
-  }, [allTasks, scrollTopVal, scrollDelta]);
+  }, [gridRows, scrollTopVal, scrollDelta]);
 
   useEffect(() => {
     if (tableRef.current) {
@@ -342,7 +367,7 @@ export default function Grid(props) {
     return () => {
       ro.disconnect();
     };
-  }, [fitColumns, tableStyle, display, basis, allTasks, setScrollOffset]);
+  }, [fitColumns, tableStyle, display, basis, gridRows, setScrollOffset]);
 
   useEffect(() => {
     if (!scrollTask || !tableAPI) return;
@@ -558,7 +583,7 @@ export default function Grid(props) {
           columnStyle={(col) =>
             `wx-rHj6070p wx-text-${col.align}${col.id === 'add-task' ? ' wx-action' : ''}`
           }
-          data={allTasks}
+          data={gridRows}
           columns={fitColumns}
           selectedRows={[...sel]}
           sortMarks={sortMarks}

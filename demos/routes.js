@@ -14,7 +14,6 @@ import GanttSizes from './cases/GanttSizes.jsx';
 import GanttMultiple from './cases/GanttMultiple.jsx';
 import GanttPerformance from './cases/GanttPerformance.jsx';
 
-
 import GanttTooltips from './cases/GanttTooltips.jsx';
 import GanttToolbar from './cases/GanttToolbar.jsx';
 import GanttToolbarCustom from './cases/GanttToolbarCustom.jsx';
@@ -35,8 +34,8 @@ import ContextMenuOptions from './cases/ContextMenuOptions.jsx';
 import GanttHolidays from './cases/GanttHolidays.jsx';
 import GanttSort from './cases/GanttSort.jsx';
 import GanttCustomSort from './cases/GanttCustomSort.jsx';
-import SummariesProgress from './cases/ProSummariesProgress.jsx';
-import SummariesConvert from './cases/ProSummariesConvert.jsx';
+// import SummariesProgress from './cases/ProSummariesProgress.jsx';
+// import SummariesConvert from './cases/ProSummariesConvert.jsx';
 import GanttEditor from './cases/GanttEditor.jsx';
 import GanttEditorConfig from './cases/GanttEditorConfig.jsx';
 import GanttEditorCustomControls from './cases/GanttEditorCustomControls.jsx';
@@ -50,6 +49,7 @@ import HeaderMenu from './cases/GridHeaderMenu.jsx';
 import GridInlineEditors from './cases/GridInlineEditors.jsx';
 import GanttEditorReadonly from './cases/GanttEditorReadonly.jsx';
 import GanttEditorValidation from './cases/GanttEditorValidation.jsx';
+import GanttMultiTaskRows from './cases/GanttMultiTaskRows.jsx';
 
 export const links = [
   ['/base/:skin', 'Basic Gantt', BasicInit, 'BasicInit'],
@@ -78,11 +78,16 @@ export const links = [
 
   ['/holidays/:skin', 'Holidays', GanttHolidays, 'GanttHolidays'],
 
-
   ['/templates/:skin', 'Custom text', GanttText, 'GanttText'],
   ['/tooltips/:skin', 'Tooltips', GanttTooltips, 'GanttTooltips'],
 
   ['/task-types/:skin', 'Task types', GanttTaskTypes, 'GanttTaskTypes'],
+  [
+    '/multi-task-rows/:skin',
+    'Multiple tasks per row',
+    GanttMultiTaskRows,
+    'GanttMultiTaskRows',
+  ],
 
   ['/zoom/:skin', 'Zoom', GanttZoom, 'GanttZoom'],
   ['/custom-zoom/:skin', 'Custom Zoom', GanttCustomZoom, 'GanttCustomZoom'],

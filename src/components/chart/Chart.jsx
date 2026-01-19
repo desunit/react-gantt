@@ -23,6 +23,8 @@ function Chart(props) {
     taskTemplate,
     cellBorders,
     highlightTime,
+    multiTaskRows = false,
+    rowMapping = null,
   } = props;
 
   const api = useContext(storeContext);
@@ -270,7 +272,12 @@ function Chart(props) {
             )
           : null}
 
-        <Bars readonly={readonly} taskTemplate={taskTemplate} />
+        <Bars
+          readonly={readonly}
+          taskTemplate={taskTemplate}
+          multiTaskRows={multiTaskRows}
+          rowMapping={rowMapping}
+        />
       </div>
     </div>
   );

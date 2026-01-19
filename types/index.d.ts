@@ -11,12 +11,23 @@ import type {
   TMethodsConfig,
   IApi,
   IConfig,
-  ITask,
+  ITask as IBaseTask,
   IGanttColumn,
+  TID,
 } from '@svar-ui/gantt-store';
 
 export * from '@svar-ui/gantt-store';
 export { registerEditorItem } from '@svar-ui/react-editor';
+
+// Extended task interface with row support
+export interface ITask extends IBaseTask {
+  row?: TID | number;
+}
+
+// Extended config with multiTaskRows support
+export interface IGanttConfig extends IConfig {
+  multiTaskRows?: boolean;
+}
 
 export interface IColumnConfig extends Omit<IGanttColumn, 'header'> {
   cell?: ITableColumn['cell'];
@@ -36,7 +47,7 @@ export declare const Gantt: FC<
     cellBorders?: 'column' | 'full';
     highlightTime?: (date: Date, unit: 'day' | 'hour') => string;
     init?: (api: IApi) => void;
-  } & IConfig &
+  } & IGanttConfig &
     GanttActions<TMethodsConfig>
 >;
 
