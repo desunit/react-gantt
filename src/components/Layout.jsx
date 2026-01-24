@@ -25,6 +25,7 @@ function Layout(props) {
     onTableAPIChange,
     multiTaskRows = false,
     rowMapping = null,
+    marqueeSelect = false,
   } = props;
 
   const api = useContext(storeContext);
@@ -241,9 +242,15 @@ function Layout(props) {
         'ctrl+v': true,
         'ctrl+x': true,
         'ctrl+d': true,
+        'meta+c': true,
+        'meta+v': true,
+        'meta+x': true,
+        'meta+d': true,
         backspace: true,
         'ctrl+z': undo,
         'ctrl+y': undo,
+        'meta+z': undo,
+        'meta+shift+z': undo,
       },
       exec: (ev) => {
         if (!ev.isInput) api.exec('hotkey', ev);
@@ -305,6 +312,7 @@ function Layout(props) {
                 highlightTime={highlightTime}
                 multiTaskRows={multiTaskRows}
                 rowMapping={rowMapping}
+                marqueeSelect={marqueeSelect}
               />
             </div>
           </div>

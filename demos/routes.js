@@ -50,6 +50,7 @@ import GridInlineEditors from './cases/GridInlineEditors.jsx';
 import GanttEditorReadonly from './cases/GanttEditorReadonly.jsx';
 import GanttEditorValidation from './cases/GanttEditorValidation.jsx';
 import GanttMultiTaskRows from './cases/GanttMultiTaskRows.jsx';
+import GanttMarqueeSelect from './cases/GanttMarqueeSelect.jsx';
 
 export const links = [
   ['/base/:skin', 'Basic Gantt', BasicInit, 'BasicInit'],
@@ -87,6 +88,12 @@ export const links = [
     'Multiple tasks per row',
     GanttMultiTaskRows,
     'GanttMultiTaskRows',
+  ],
+  [
+    '/marquee-select/:skin',
+    'Marquee selection & bulk move',
+    GanttMarqueeSelect,
+    'GanttMarqueeSelect',
   ],
 
   ['/zoom/:skin', 'Zoom', GanttZoom, 'GanttZoom'],

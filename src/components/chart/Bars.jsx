@@ -23,6 +23,7 @@ function Bars(props) {
     taskTemplate: TaskTemplate,
     multiTaskRows = false,
     rowMapping = null,
+    marqueeSelect = false,
   } = props;
 
   const api = useContext(storeContext);
@@ -94,6 +95,11 @@ function Bars(props) {
 
   const [totalWidth, setTotalWidth] = useState(0);
 
+  // Marquee selection state
+  const [marquee, setMarquee] = useState(null);
+  // Bulk move state
+  const [bulkMove, setBulkMove] = useState(null);
+
   const containerRef = useRef(null);
 
   const hasFocus = useMemo(() => {
@@ -162,6 +168,40 @@ function Bars(props) {
     [api],
   );
 
+  // Get tasks intersecting with a rectangle
+  const getIntersectingTasks = useCallback(
+    (rect) => {
+      const minX = Math.min(rect.startX, rect.currentX);
+      const maxX = Math.max(rect.startX, rect.currentX);
+      const minY = Math.min(rect.startY, rect.currentY);
+      const maxY = Math.max(rect.startY, rect.currentY);
+
+      return rTasksValue.filter((task) => {
+        // Check if task rectangle intersects with selection rectangle
+        const taskLeft = task.$x;
+        const taskRight = task.$x + task.$w;
+        const taskTop = task.$y;
+        const taskBottom = task.$y + task.$h;
+
+        return (
+          taskLeft < maxX &&
+          taskRight > minX &&
+          taskTop < maxY &&
+          taskBottom > minY
+        );
+      });
+    },
+    [rTasksValue],
+  );
+
+  // Check if a task is in the current selection
+  const isTaskSelected = useCallback(
+    (taskId) => {
+      return selectedValue.some((s) => s.id === taskId);
+    },
+    [selectedValue],
+  );
+
   const down = useCallback(
     (node, point) => {
       const { clientX } = point;
@@ -214,11 +254,75 @@ function Bars(props) {
       if (e.button !== 0) return;
 
       const node = locate(e);
+
+      // Marquee selection: click on empty space
+      if (!node && marqueeSelect && !readonly) {
+        const container = containerRef.current;
+        if (!container) return;
+        const rect = container.getBoundingClientRect();
+        const startX = e.clientX - rect.left + container.parentElement.scrollLeft;
+        const startY = e.clientY - rect.top + container.parentElement.parentElement.scrollTop;
+
+        setMarquee({
+          startX,
+          startY,
+          currentX: startX,
+          currentY: startY,
+          ctrlKey: e.ctrlKey || e.metaKey,
+        });
+        startDrag();
+        return;
+      }
+
       if (!node) return;
+
+      // Bulk move: click on already-selected task when multiple tasks are selected
+      if (marqueeSelect && !readonly && selectedValue.length > 1) {
+        const id = getID(node);
+        if (isTaskSelected(id)) {
+          const css = e.target.classList;
+          // Don't start bulk move if clicking on link markers, progress marker, or delete buttons
+          if (
+            !css.contains('wx-link') &&
+            !css.contains('wx-progress-marker') &&
+            !e.target.closest('.wx-delete-button')
+          ) {
+            // Check if we're at a resize edge - if so, don't start bulk move
+            const task = api.getTask(id);
+            const mode = getMoveMode(node, e, task);
+            if (!mode) {
+              // Start bulk move
+              const originalPositions = new Map();
+              selectedValue.forEach((sel) => {
+                const t = api.getTask(sel.id);
+                if (t) {
+                  // Skip summary tasks when auto-schedule is on
+                  if (schedule?.auto && t.type === 'summary') return;
+                  originalPositions.set(sel.id, {
+                    $x: t.$x,
+                    $w: t.$w,
+                    start: t.start,
+                    end: t.end,
+                  });
+                }
+              });
+
+              setBulkMove({
+                baseTaskId: id,
+                startX: e.clientX,
+                dx: 0,
+                originalPositions,
+              });
+              startDrag();
+              return;
+            }
+          }
+        }
+      }
 
       down(node, e);
     },
-    [down],
+    [down, marqueeSelect, readonly, selectedValue, isTaskSelected, api, getMoveMode, schedule, startDrag],
   );
 
   const touchstart = useCallback(
@@ -242,6 +346,73 @@ function Bars(props) {
   );
 
   const up = useCallback(() => {
+    // Handle marquee selection finalization
+    if (marquee) {
+      const intersecting = getIntersectingTasks(marquee);
+
+      if (marquee.ctrlKey) {
+        // Additive selection: toggle each intersecting task
+        intersecting.forEach((task) => {
+          api.exec('select-task', { id: task.id, toggle: true });
+        });
+      } else {
+        // Replace selection: clear and select all intersecting
+        // First clear selection
+        if (selectedValue.length > 0) {
+          api.exec('select-task', { id: null });
+        }
+        // Then select all intersecting tasks
+        intersecting.forEach((task, index) => {
+          api.exec('select-task', {
+            id: task.id,
+            toggle: index > 0, // First one replaces, rest toggle (add)
+          });
+        });
+      }
+
+      setMarquee(null);
+      endDrag();
+      ignoreNextClickRef.current = true;
+      return;
+    }
+
+    // Handle bulk move finalization
+    if (bulkMove) {
+      const { dx, originalPositions } = bulkMove;
+      const diff = Math.round(dx / lengthUnitWidth);
+
+      if (diff !== 0) {
+        let isFirst = true;
+        originalPositions.forEach((origPos, taskId) => {
+          const task = api.getTask(taskId);
+          if (task) {
+            api.exec('update-task', {
+              id: taskId,
+              diff,
+              task: { start: task.start, end: task.end },
+              skipUndo: !isFirst, // Only first task creates undo entry
+            });
+            isFirst = false;
+          }
+        });
+        ignoreNextClickRef.current = true;
+      } else {
+        // No actual move, reset visual positions
+        originalPositions.forEach((origPos, taskId) => {
+          api.exec('drag-task', {
+            id: taskId,
+            left: origPos.$x,
+            width: origPos.$w,
+            inProgress: false,
+          });
+        });
+      }
+
+      setBulkMove(null);
+      endDrag();
+      return;
+    }
+
     if (progressFromRef.current) {
       const { dx, id, marker, value } = progressFromRef.current;
       progressFromRef.current = null;
@@ -291,13 +462,48 @@ function Bars(props) {
 
       endDrag();
     }
-  }, [api, endDrag, taskMove, lengthUnitWidth]);
+  }, [api, endDrag, taskMove, lengthUnitWidth, marquee, bulkMove, getIntersectingTasks, selectedValue]);
 
   const move = useCallback(
     (e, point) => {
-      const { clientX } = point;
+      const { clientX, clientY } = point;
 
       if (!readonly) {
+        // Handle marquee selection drag
+        if (marquee) {
+          const container = containerRef.current;
+          if (!container) return;
+          const rect = container.getBoundingClientRect();
+          const currentX = clientX - rect.left + container.parentElement.scrollLeft;
+          const currentY = clientY - rect.top + container.parentElement.parentElement.scrollTop;
+
+          setMarquee((prev) => ({
+            ...prev,
+            currentX,
+            currentY,
+          }));
+          return;
+        }
+
+        // Handle bulk move drag
+        if (bulkMove) {
+          const dx = clientX - bulkMove.startX;
+
+          // Apply visual offset to all selected tasks
+          bulkMove.originalPositions.forEach((origPos, taskId) => {
+            const newLeft = origPos.$x + dx;
+            api.exec('drag-task', {
+              id: taskId,
+              left: newLeft,
+              width: origPos.$w,
+              inProgress: true,
+            });
+          });
+
+          setBulkMove((prev) => ({ ...prev, dx }));
+          return;
+        }
+
         if (progressFromRef.current) {
           const { node, x, id } = progressFromRef.current;
           const dx = (progressFromRef.current.dx = clientX - x);
@@ -384,6 +590,8 @@ function Bars(props) {
       getMoveMode,
       onSelectLink,
       up,
+      marquee,
+      bulkMove,
     ],
   );
 
@@ -606,6 +814,21 @@ function Bars(props) {
     [schedule, tree, linkFrom],
   );
 
+  // Compute marquee rectangle style
+  const marqueeStyle = useMemo(() => {
+    if (!marquee) return null;
+    const left = Math.min(marquee.startX, marquee.currentX);
+    const top = Math.min(marquee.startY, marquee.currentY);
+    const width = Math.abs(marquee.currentX - marquee.startX);
+    const height = Math.abs(marquee.currentY - marquee.startY);
+    return {
+      left: `${left}px`,
+      top: `${top}px`,
+      width: `${width}px`,
+      height: `${height}px`,
+    };
+  }, [marquee]);
+
   return (
     <div
       className="wx-GKbcLEGA wx-bars"
@@ -754,6 +977,9 @@ function Bars(props) {
           </Fragment>
         );
       })}
+      {marquee && marqueeStyle && (
+        <div className="wx-GKbcLEGA wx-marquee-selection" style={marqueeStyle} />
+      )}
     </div>
   );
 }

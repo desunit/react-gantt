@@ -89,6 +89,7 @@ const Gantt = forwardRef(function Gantt(
     undo = false,
     splitTasks = false,
     multiTaskRows = false,
+    marqueeSelect = false,
     ...restProps
   },
   ref,
@@ -345,6 +346,7 @@ const Gantt = forwardRef(function Gantt(
           onTableAPIChange={setTableAPI}
           multiTaskRows={multiTaskRows}
           rowMapping={rowMapping}
+          marqueeSelect={marqueeSelect}
         />
       </StoreContext.Provider>
     </context.i18n.Provider>

@@ -24,9 +24,10 @@ export interface ITask extends IBaseTask {
   row?: TID | number;
 }
 
-// Extended config with multiTaskRows support
+// Extended config with multiTaskRows and marqueeSelect support
 export interface IGanttConfig extends IConfig {
   multiTaskRows?: boolean;
+  marqueeSelect?: boolean;
 }
 
 export interface IColumnConfig extends Omit<IGanttColumn, 'header'> {

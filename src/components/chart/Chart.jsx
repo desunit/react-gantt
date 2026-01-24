@@ -25,6 +25,7 @@ function Chart(props) {
     highlightTime,
     multiTaskRows = false,
     rowMapping = null,
+    marqueeSelect = false,
   } = props;
 
   const api = useContext(storeContext);
@@ -277,6 +278,7 @@ function Chart(props) {
           taskTemplate={taskTemplate}
           multiTaskRows={multiTaskRows}
           rowMapping={rowMapping}
+          marqueeSelect={marqueeSelect}
         />
       </div>
     </div>

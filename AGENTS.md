@@ -218,6 +218,76 @@ function App() {
 - Drag: Horizontal drag per-task to adjust time
 - Grid: One row per unique `row` value showing first task's properties
 
+## Marquee Selection + Bulk Move Feature
+
+### Feature Description
+
+Click-drag on empty chart area creates a selection rectangle. All intersecting tasks get selected. Drag any selected task to move ALL selected tasks synchronously.
+
+### Implementation (Bars.jsx)
+
+**State:**
+```js
+const [marquee, setMarquee] = useState(null);    // {startX, startY, currentX, currentY, ctrlKey}
+const [bulkMove, setBulkMove] = useState(null);  // {baseTaskId, startX, dx, originalPositions}
+```
+
+**Key Functions:**
+- `getIntersectingTasks(rect)` - Returns tasks whose bounds overlap selection rectangle
+- `isTaskSelected(taskId)` - Checks if task is in current selection
+
+**Mouse Event Flow:**
+
+1. **mousedown on empty space** → Start marquee with coords + modifier keys
+2. **mousedown on selected task** (when multiple selected) → Start bulk move, store original positions
+3. **mousemove with marquee** → Update currentX/Y
+4. **mousemove with bulkMove** → Apply dx offset to all selected via `drag-task`
+5. **mouseup with marquee** → Find intersecting tasks, call `select-task` for each
+6. **mouseup with bulkMove** → Execute `update-task` for each (first task creates undo entry)
+
+### Key Behaviors
+
+- **Ctrl/Cmd+marquee**: Additive selection (toggle each task)
+- **Plain marquee**: Replace selection
+- **Bulk move undo**: Uses `skipUndo` for all but first task → single Ctrl+Z undoes entire move
+- **Summary tasks**: Excluded from bulk move when `schedule?.auto` is enabled
+
+### Files Modified
+
+- `types/index.d.ts` - Added `marqueeSelect?: boolean`
+- `src/components/Gantt.jsx` - Accept prop, pass to Layout
+- `src/components/Layout.jsx` - Pass to Chart
+- `src/components/chart/Chart.jsx` - Pass to Bars
+- `src/components/chart/Bars.jsx` - Main implementation
+- `src/components/chart/Bars.css` - Marquee rectangle styling
+
+### Demo
+
+- Component: `demos/cases/GanttMarqueeSelect.jsx`
+- Route: `/marquee-select/:skin`
+
+### Usage
+
+```jsx
+<Gantt
+  tasks={tasks}
+  marqueeSelect={true}
+  undo={true}  // Enable undo for bulk move
+/>
+```
+
+### CSS
+
+```css
+.wx-marquee-selection.wx-GKbcLEGA {
+  position: absolute;
+  border: 2px dashed var(--wx-color-primary, #2196f3);
+  background-color: rgba(33, 150, 243, 0.1);
+  pointer-events: none;
+  z-index: 10;
+}
+```
+
 ## Development Patterns
 
 ### Adding New Features

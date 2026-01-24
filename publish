@@ -1,0 +1,19 @@
+#!/bin/bash
+set -e
+
+echo "Building..."
+npm run build
+npm run build:full-css
+
+echo "Bumping version..."
+NEW_VERSION=$(npm version minor --no-git-tag-version)
+
+echo "Committing ${NEW_VERSION}..."
+git add -A
+git commit -m "${NEW_VERSION}" --no-verify
+git tag "${NEW_VERSION}"
+
+echo "Pushing..."
+git push && git push --tags
+
+echo "Done! Published ${NEW_VERSION}"
