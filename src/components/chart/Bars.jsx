@@ -34,7 +34,7 @@ function Bars(props) {
   const scalesValue = useStore(api, '_scales');
   const taskTypesValue = useStore(api, 'taskTypes');
   const baselinesValue = useStore(api, 'baselines');
-  const selectedValue = useStore(api, '_selected');
+  const [selectedValue, selectedCounter] = useStoreWithCounter(api, '_selected');
   const scrollTaskStore = useStore(api, '_scrollTask');
   const criticalPath = useStore(api, 'criticalPath');
   const tree = useStore(api, 'tasks');
@@ -168,20 +168,62 @@ function Bars(props) {
     [api],
   );
 
-  // Get tasks intersecting with a rectangle
+  // Precompute adjusted Y positions for all tasks (used for marquee intersection)
+  const taskYPositions = useMemo(() => {
+    const yMap = new Map();
+
+    if (!multiTaskRows || !rowMapping) {
+      // No multi-row adjustment - use original $y
+      rTasksValue.forEach((task) => {
+        yMap.set(task.id, task.$y);
+      });
+      return yMap;
+    }
+
+    // Build rowIndex map
+    const rowIndexMap = new Map();
+    const seenRows = [];
+    rTasksValue.forEach((task) => {
+      const rowId = rowMapping.taskRows.get(task.id) ?? task.id;
+      if (!rowIndexMap.has(rowId)) {
+        rowIndexMap.set(rowId, seenRows.length);
+        seenRows.push(rowId);
+      }
+    });
+
+    // Compute adjusted Y for each task
+    rTasksValue.forEach((task) => {
+      const rowId = rowMapping.taskRows.get(task.id) ?? task.id;
+      const rowIndex = rowIndexMap.get(rowId) ?? 0;
+      yMap.set(task.id, rowIndex * cellHeight);
+    });
+
+    return yMap;
+  }, [rTasksValue, multiTaskRows, rowMapping, cellHeight]);
+
+  // Get tasks intersecting with a rectangle (viewport-relative coordinates)
   const getIntersectingTasks = useCallback(
     (rect) => {
+      const container = containerRef.current;
+      if (!container) return [];
+
+      // Get current scroll offsets
+      const scrollLeft = container.parentElement?.scrollLeft || 0;
+      const scrollTop = container.parentElement?.parentElement?.scrollTop || 0;
+
       const minX = Math.min(rect.startX, rect.currentX);
       const maxX = Math.max(rect.startX, rect.currentX);
       const minY = Math.min(rect.startY, rect.currentY);
       const maxY = Math.max(rect.startY, rect.currentY);
 
       return rTasksValue.filter((task) => {
-        // Check if task rectangle intersects with selection rectangle
-        const taskLeft = task.$x;
-        const taskRight = task.$x + task.$w;
-        const taskTop = task.$y;
-        const taskBottom = task.$y + task.$h;
+        // Task positions are absolute (content space)
+        // Convert to viewport-relative by subtracting scroll
+        const taskLeft = task.$x - scrollLeft;
+        const taskRight = task.$x + task.$w - scrollLeft;
+        const taskAbsoluteY = taskYPositions.get(task.id) ?? task.$y;
+        const taskTop = taskAbsoluteY - scrollTop;
+        const taskBottom = taskTop + task.$h;
 
         return (
           taskLeft < maxX &&
@@ -191,15 +233,20 @@ function Bars(props) {
         );
       });
     },
-    [rTasksValue],
+    [rTasksValue, taskYPositions],
   );
+
+  // Set of selected task IDs for fast lookup
+  const selectedIds = useMemo(() => {
+    return new Set(selectedValue.map((s) => s.id));
+  }, [selectedValue, selectedCounter]);
 
   // Check if a task is in the current selection
   const isTaskSelected = useCallback(
     (taskId) => {
-      return selectedValue.some((s) => s.id === taskId);
+      return selectedIds.has(taskId);
     },
-    [selectedValue],
+    [selectedIds],
   );
 
   const down = useCallback(
@@ -260,8 +307,9 @@ function Bars(props) {
         const container = containerRef.current;
         if (!container) return;
         const rect = container.getBoundingClientRect();
-        const startX = e.clientX - rect.left + container.parentElement.scrollLeft;
-        const startY = e.clientY - rect.top + container.parentElement.parentElement.scrollTop;
+        // Use viewport-relative coordinates (no scroll offset added)
+        const startX = e.clientX - rect.left;
+        const startY = e.clientY - rect.top;
 
         setMarquee({
           startX,
@@ -474,8 +522,9 @@ function Bars(props) {
           const container = containerRef.current;
           if (!container) return;
           const rect = container.getBoundingClientRect();
-          const currentX = clientX - rect.left + container.parentElement.scrollLeft;
-          const currentY = clientY - rect.top + container.parentElement.parentElement.scrollTop;
+          // Use viewport-relative coordinates (no scroll offset added)
+          const currentX = clientX - rect.left;
+          const currentY = clientY - rect.top;
 
           setMarquee((prev) => ({
             ...prev,
@@ -858,6 +907,7 @@ function Bars(props) {
           `wx-bar wx-${taskTypeCss(task.type)}` +
           (touched && taskMove && task.id === taskMove.id ? ' wx-touch' : '') +
           (linkFrom && linkFrom.id === task.id ? ' wx-selected' : '') +
+          (selectedIds.has(task.id) ? ' wx-selected' : '') +
           (isTaskCritical(task.id) ? ' wx-critical' : '') +
           (task.$reorder ? ' wx-reorder-task' : '') +
           (splitTasks && task.segments ? ' wx-split' : '');

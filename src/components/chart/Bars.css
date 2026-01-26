@@ -51,7 +51,8 @@
 }
 
 .wx-task.wx-selected:not(.wx-split).wx-GKbcLEGA {
-  border: 1px solid var(--wx-gantt-task-border-color);
+  outline: 1px solid var(--wx-color-primary);
+  outline-offset: 1px;
   box-shadow: var(--wx-gantt-bar-shadow);
 }
 
@@ -67,7 +68,8 @@
 }
 
 .wx-summary.wx-selected.wx-GKbcLEGA {
-  border: 1px solid var(--wx-gantt-summary-border-color);
+  outline: 1px solid var(--wx-color-primary);
+  outline-offset: 1px;
   box-shadow: var(--wx-gantt-bar-shadow);
 }
 
@@ -257,7 +259,8 @@
   background-color: var(--wx-gantt-task-critical-color);
 }
 .wx-task.wx-critical.wx-selected.wx-GKbcLEGA {
-  border: 1px solid var(--wx-gantt-task-critical-color);
+  outline: 1px solid var(--wx-color-primary);
+  outline-offset: 1px;
 }
 .wx-task.wx-critical .wx-progress-percent {
   background-color: var(--wx-gantt-task-critical-fill-color);
@@ -275,12 +278,14 @@
   background-color: var(--wx-gantt-summary-critical-fill-color);
 }
 .wx-summary.wx-critical.wx-selected.wx-GKbcLEGA {
-  border: 1px solid var(--wx-gantt-summary-critical-color);
+  outline: 1px solid var(--wx-color-primary);
+  outline-offset: 1px;
 }
 
 /*split tasks*/
 .wx-split.wx-selected.wx-GKbcLEGA {
-  border-color: var(--wx-gantt-task-border-color);
+  outline: 1px solid var(--wx-color-primary);
+  outline-offset: 1px;
 }
 .wx-bars.wx-GKbcLEGA .wx-split.wx-bar {
   background: transparent;
@@ -295,7 +300,8 @@
   background-color: var(--wx-gantt-task-critical-color);
 }
 .wx-critical.wx-selected.wx-GKbcLEGA .wx-segment {
-  border: 1px solid var(--wx-gantt-task-critical-color);
+  outline: 1px solid var(--wx-color-primary);
+  outline-offset: 1px;
 }
 .wx-critical.wx-GKbcLEGA .wx-segment .wx-progress-percent {
   background-color: var(--wx-gantt-task-critical-fill-color);
