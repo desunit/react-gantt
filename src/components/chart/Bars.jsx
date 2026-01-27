@@ -401,19 +401,20 @@ function Bars(props) {
       if (marquee.ctrlKey) {
         // Additive selection: toggle each intersecting task
         intersecting.forEach((task) => {
-          api.exec('select-task', { id: task.id, toggle: true });
+          api.exec('select-task', { id: task.id, toggle: true, marquee: true });
         });
       } else {
         // Replace selection: clear and select all intersecting
         // First clear selection
         if (selectedValue.length > 0) {
-          api.exec('select-task', { id: null });
+          api.exec('select-task', { id: null, marquee: true });
         }
         // Then select all intersecting tasks
         intersecting.forEach((task, index) => {
           api.exec('select-task', {
             id: task.id,
             toggle: index > 0, // First one replaces, rest toggle (add)
+            marquee: true,
           });
         });
       }

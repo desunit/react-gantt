@@ -749,12 +749,13 @@ function fn(t) {
     if (Y) {
       const e = $e(Y);
       Y.ctrlKey ? e.forEach((h) => {
-        r.exec("select-task", { id: h.id, toggle: !0 });
-      }) : (c.length > 0 && r.exec("select-task", { id: null }), e.forEach((h, T) => {
+        r.exec("select-task", { id: h.id, toggle: !0, marquee: !0 });
+      }) : (c.length > 0 && r.exec("select-task", { id: null, marquee: !0 }), e.forEach((h, T) => {
         r.exec("select-task", {
           id: h.id,
-          toggle: T > 0
+          toggle: T > 0,
           // First one replaces, rest toggle (add)
+          marquee: !0
         });
       })), te(null), xe(), K.current = !0;
       return;
