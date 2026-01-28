@@ -90,6 +90,9 @@ const Gantt = forwardRef(function Gantt(
     splitTasks = false,
     multiTaskRows = false,
     marqueeSelect = false,
+    currentWeekHighlight = false,
+    currentWeekColor = null,
+    scrollToCurrentWeek = false,
     ...restProps
   },
   ref,
@@ -323,17 +326,49 @@ const Gantt = forwardRef(function Gantt(
     });
   }
 
-  // highlightTime from calendar
+  // Helper to check if a date is in the current week
+  const isCurrentWeek = useMemo(() => {
+    const now = new Date();
+    const weekStart = lCalendar?.weekStart ?? 0; // 0 = Sunday, 1 = Monday
+
+    // Get start of current week
+    const currentWeekStart = new Date(now);
+    const dayOfWeek = currentWeekStart.getDay();
+    const diff = (dayOfWeek - weekStart + 7) % 7;
+    currentWeekStart.setDate(currentWeekStart.getDate() - diff);
+    currentWeekStart.setHours(0, 0, 0, 0);
+
+    // Get end of current week
+    const currentWeekEnd = new Date(currentWeekStart);
+    currentWeekEnd.setDate(currentWeekEnd.getDate() + 7);
+
+    return (date) => date >= currentWeekStart && date < currentWeekEnd;
+  }, [lCalendar]);
+
+  // highlightTime from calendar + current week
   const highlightTime = useMemo(() => {
-    if (calendar) {
-      return (day, unit) => {
-        if (unit == 'day' && !calendar.getDayHours(day)) return 'wx-weekend';
-        if (unit == 'hour' && !calendar.getDayHours(day)) return 'wx-weekend';
-        return '';
-      };
-    }
-    return highlightTimeProp;
-  }, [calendar, highlightTimeProp]);
+    return (day, unit) => {
+      let classes = [];
+
+      // Calendar-based highlighting (weekends)
+      if (calendar) {
+        if (unit == 'day' && !calendar.getDayHours(day)) classes.push('wx-weekend');
+        if (unit == 'hour' && !calendar.getDayHours(day)) classes.push('wx-weekend');
+      } else if (highlightTimeProp) {
+        const result = highlightTimeProp(day, unit);
+        if (result) classes.push(result);
+      }
+
+      // Current week highlighting
+      if (currentWeekHighlight && (unit === 'week' || unit === 'day')) {
+        if (isCurrentWeek(day)) {
+          classes.push('wx-current-week');
+        }
+      }
+
+      return classes.join(' ');
+    };
+  }, [calendar, highlightTimeProp, currentWeekHighlight, isCurrentWeek]);
 
   return (
     <context.i18n.Provider value={locale}>
@@ -347,6 +382,8 @@ const Gantt = forwardRef(function Gantt(
           multiTaskRows={multiTaskRows}
           rowMapping={rowMapping}
           marqueeSelect={marqueeSelect}
+          scrollToCurrentWeek={scrollToCurrentWeek}
+          currentWeekColor={currentWeekColor}
         />
       </StoreContext.Provider>
     </context.i18n.Provider>

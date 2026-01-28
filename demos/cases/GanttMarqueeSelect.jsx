@@ -2,6 +2,9 @@ import { useMemo } from 'react';
 import { Gantt } from '../../src/';
 
 export default function GanttMarqueeSelect({ skinSettings }) {
+  // First task starts Mar 2, 2026. Start date 20 weeks before = Oct 13, 2025
+  const startDate = new Date(2025, 9, 13); // 20 weeks before first task
+
   const tasks = useMemo(() => [
     // Horizon Media (Stellar Brands)
     { id: 'horizon', text: 'Horizon Media (Stellar Brands)', parent: 0, type: 'summary', open: true },
@@ -70,6 +73,7 @@ export default function GanttMarqueeSelect({ skinSettings }) {
           tasks={tasks}
           scales={scales}
           columns={columns}
+          start={startDate}
           cellWidth={80}
           cellHeight={38}
           scaleHeight={28}
@@ -77,6 +81,8 @@ export default function GanttMarqueeSelect({ skinSettings }) {
           marqueeSelect={true}
           multiTaskRows={true}
           undo={true}
+          currentWeekHighlight={true}
+          scrollToCurrentWeek={true}
         />
       </div>
     </div>

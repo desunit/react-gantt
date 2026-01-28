@@ -26,6 +26,8 @@ function Chart(props) {
     multiTaskRows = false,
     rowMapping = null,
     marqueeSelect = false,
+    scrollToCurrentWeek = false,
+    currentWeekColor = null,
   } = props;
 
   const api = useContext(storeContext);
@@ -43,6 +45,7 @@ function Chart(props) {
   const [chartHeight, setChartHeight] = useState();
   const chartRef = useRef(null);
   const zoomAccumulatorRef = useRef(0);
+  const hasScrolledToCurrentWeekRef = useRef(false);
 
   const extraRows = 1 + (scales?.rows?.length || 0);
 
@@ -177,7 +180,7 @@ function Chart(props) {
     }
   }
 
-  function getHoliday(cell) {
+  const getHoliday = useCallback((cell) => {
     const style = highlightTime(cell.date, cell.unit);
     if (style)
       return {
@@ -185,15 +188,26 @@ function Chart(props) {
         width: cell.width,
       };
     return null;
-  }
+  }, [highlightTime]);
 
   const holidays = useMemo(() => {
-    return scales &&
-      (scales.minUnit === 'hour' || scales.minUnit === 'day') &&
-      highlightTime
-      ? scales.rows[scales.rows.length - 1].cells.map(getHoliday)
-      : null;
-  }, [scales, highlightTime]);
+    if (!scales || !highlightTime) return null;
+    // Support day, hour, and week units for highlighting
+    const supportedUnits = ['hour', 'day', 'week'];
+    if (!supportedUnits.includes(scales.minUnit)) return null;
+
+    // Calculate left positions for each cell
+    let accumulatedLeft = 0;
+    return scales.rows[scales.rows.length - 1].cells.map((cell) => {
+      const holiday = getHoliday(cell);
+      const left = accumulatedLeft;
+      accumulatedLeft += cell.width;
+      if (holiday) {
+        return { ...holiday, left };
+      }
+      return null;
+    });
+  }, [scales, highlightTime, getHoliday]);
 
   const handleHotkey = useCallback(
     (ev) => {
@@ -245,6 +259,64 @@ function Chart(props) {
     };
   }, [onWheel]);
 
+  // Scroll to center current week on mount
+  useEffect(() => {
+    if (!scrollToCurrentWeek || hasScrolledToCurrentWeekRef.current) return;
+    if (!scales || !chartRef.current || !chartHeight) return;
+
+    const el = chartRef.current;
+    const { clientWidth } = el;
+
+    // Find current week cell in the bottom scale row
+    const now = new Date();
+    const cells = scales.rows[scales.rows.length - 1]?.cells;
+    if (!cells) return;
+
+    let currentWeekIndex = -1;
+    let accumulatedWidth = 0;
+    const cellPositions = []; // Store {left, width} for each cell
+
+    for (let i = 0; i < cells.length; i++) {
+      const cell = cells[i];
+      cellPositions.push({ left: accumulatedWidth, width: cell.width });
+
+      const cellStart = cell.date;
+      // Week cell: check if now is within 7 days of the cell start
+      if (cell.unit === 'week') {
+        const cellEnd = new Date(cellStart);
+        cellEnd.setDate(cellEnd.getDate() + 7);
+        if (now >= cellStart && now < cellEnd) {
+          currentWeekIndex = i;
+        }
+      } else if (cell.unit === 'day') {
+        // Day cell: check if same date
+        if (
+          now.getFullYear() === cellStart.getFullYear() &&
+          now.getMonth() === cellStart.getMonth() &&
+          now.getDate() === cellStart.getDate()
+        ) {
+          currentWeekIndex = i;
+        }
+      }
+      accumulatedWidth += cell.width;
+    }
+
+    // Use previous week if current week found
+    let targetIndex = currentWeekIndex;
+    if (currentWeekIndex > 0) {
+      targetIndex = currentWeekIndex - 1; // Previous week
+    }
+
+    if (targetIndex >= 0 && cellPositions[targetIndex]) {
+      const target = cellPositions[targetIndex];
+      // Scroll so previous week is at the left edge of viewport
+      const scrollLeft = Math.max(0, target.left);
+      el.scrollLeft = scrollLeft;
+      api.exec('scroll-chart', { left: scrollLeft });
+      hasScrolledToCurrentWeekRef.current = true;
+    }
+  }, [scrollToCurrentWeek, scales, chartHeight, api]);
+
   useRenderTime("chart");
   
   return (
@@ -288,7 +360,7 @@ function Chart(props) {
                   className={'wx-mR7v2Xag ' + holiday.css}
                   style={{
                     width: `${holiday.width}px`,
-                    left: `${i * holiday.width}px`,
+                    left: `${holiday.left}px`,
                   }}
                 />
               ) : null,

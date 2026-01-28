@@ -26,6 +26,8 @@ function Layout(props) {
     multiTaskRows = false,
     rowMapping = null,
     marqueeSelect = false,
+    scrollToCurrentWeek = false,
+    currentWeekColor = null,
   } = props;
 
   const api = useContext(storeContext);
@@ -313,6 +315,8 @@ function Layout(props) {
                 multiTaskRows={multiTaskRows}
                 rowMapping={rowMapping}
                 marqueeSelect={marqueeSelect}
+                scrollToCurrentWeek={scrollToCurrentWeek}
+                currentWeekColor={currentWeekColor}
               />
             </div>
           </div>

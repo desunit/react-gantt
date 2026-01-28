@@ -28,3 +28,7 @@
   background: var(--wx-gantt-holiday-background);
   color: var(--wx-gantt-holiday-color);
 }
+
+.wx-cell.wx-current-week.wx-ZkvhDKir {
+  background: var(--wx-gantt-current-week-background, #fffbeb);
+}

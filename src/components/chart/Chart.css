@@ -62,3 +62,9 @@
   color: var(--wx-gantt-holiday-color);
   position: absolute;
 }
+
+.wx-current-week.wx-mR7v2Xag {
+  height: 100%;
+  background: var(--wx-gantt-current-week-background, #fffbeb);
+  position: absolute;
+}
