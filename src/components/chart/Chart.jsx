@@ -42,6 +42,7 @@ function Chart(props) {
 
   const [chartHeight, setChartHeight] = useState();
   const chartRef = useRef(null);
+  const zoomAccumulatorRef = useRef(0);
 
   const extraRows = 1 + (scales?.rows?.length || 0);
 
@@ -159,12 +160,20 @@ function Chart(props) {
     if (zoom && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       const el = chartRef.current;
-      const dir = -Math.sign(e.deltaY);
       const offset = e.clientX - (el ? el.getBoundingClientRect().left : 0);
-      api.exec('zoom-scale', {
-        dir,
-        offset,
-      });
+
+      // Accumulate delta for smoother zoom (threshold ~3 wheel ticks)
+      zoomAccumulatorRef.current += e.deltaY;
+      const threshold = 150;
+
+      if (Math.abs(zoomAccumulatorRef.current) >= threshold) {
+        const dir = -Math.sign(zoomAccumulatorRef.current);
+        zoomAccumulatorRef.current = 0;
+        api.exec('zoom-scale', {
+          dir,
+          offset,
+        });
+      }
     }
   }
 
