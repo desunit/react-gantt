@@ -82,6 +82,11 @@ function Bars(props) {
     [scalesValue],
   );
 
+  const lengthUnit = useMemo(
+    () => scalesValue.lengthUnit || 'day',
+    [scalesValue],
+  );
+
   const ignoreNextClickRef = useRef(false);
 
   const [linkFrom, setLinkFrom] = useState(undefined);
@@ -494,14 +499,24 @@ function Bars(props) {
           let task = api.getTask(id);
           if (segment) task = task.segments[index];
 
+          // Calculate new dates directly instead of relying on store's diff handling
+          const msPerDay = 24 * 60 * 60 * 1000;
+          const daysPerUnit = lengthUnit === 'week' ? 7 : lengthUnit === 'month' ? 30 : lengthUnit === 'quarter' ? 91 : lengthUnit === 'year' ? 365 : 1;
+          const diffMs = diff * daysPerUnit * msPerDay;
+
           if (mode === 'move') {
-            update.start = task.start;
-            update.end = task.end;
-          } else update[mode] = task[mode];
+            update.start = new Date(task.start.getTime() + diffMs);
+            update.end = new Date(task.end.getTime() + diffMs);
+          } else if (mode === 'start') {
+            update.start = new Date(task.start.getTime() + diffMs);
+            update.end = task.end; // Keep end fixed for resize
+          } else if (mode === 'end') {
+            update.start = task.start; // Keep start fixed for resize
+            update.end = new Date(task.end.getTime() + diffMs);
+          }
 
           api.exec('update-task', {
             id,
-            diff,
             task: update,
             ...(segment && { segmentIndex: index }),
           });
@@ -511,7 +526,7 @@ function Bars(props) {
 
       endDrag();
     }
-  }, [api, endDrag, taskMove, lengthUnitWidth, marquee, bulkMove, getIntersectingTasks, selectedValue]);
+  }, [api, endDrag, taskMove, lengthUnitWidth, lengthUnit, marquee, bulkMove, getIntersectingTasks, selectedValue]);
 
   const move = useCallback(
     (e, point) => {

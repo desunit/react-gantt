@@ -224,15 +224,53 @@ function App() {
 
 Click-drag on empty chart area creates a selection rectangle. All intersecting tasks get selected. Drag any selected task to move ALL selected tasks synchronously.
 
+### IMPORTANT: Task `parent` Property Required
+
+**All tasks MUST have a `parent` property** for marquee selection and bulk move to work correctly:
+
+- Summary/root tasks: `parent: 0`
+- Child tasks: `parent: '<parent-id>'`
+
+Without the `parent` property, tasks become orphaned from the tree structure and selection/drag operations fail silently.
+
+```jsx
+// CORRECT - all tasks have parent
+const tasks = [
+  { id: 'project-1', text: 'Project', type: 'summary', parent: 0 },
+  {
+    id: 'task-1',
+    text: 'Task',
+    type: 'task',
+    parent: 'project-1',
+    row: 'row1',
+  },
+  {
+    id: 'task-2',
+    text: 'Task 2',
+    type: 'task',
+    parent: 'project-1',
+    row: 'row1',
+  },
+];
+
+// WRONG - missing parent on child tasks
+const tasks = [
+  { id: 'project-1', text: 'Project', type: 'summary' }, // missing parent: 0
+  { id: 'task-1', text: 'Task', type: 'task', row: 'row1' }, // missing parent!
+];
+```
+
 ### Implementation (Bars.jsx)
 
 **State:**
+
 ```js
-const [marquee, setMarquee] = useState(null);    // {startX, startY, currentX, currentY, ctrlKey}
-const [bulkMove, setBulkMove] = useState(null);  // {baseTaskId, startX, dx, originalPositions}
+const [marquee, setMarquee] = useState(null); // {startX, startY, currentX, currentY, ctrlKey}
+const [bulkMove, setBulkMove] = useState(null); // {baseTaskId, startX, dx, originalPositions}
 ```
 
 **Key Functions:**
+
 - `getIntersectingTasks(rect)` - Returns tasks whose bounds overlap selection rectangle
 - `isTaskSelected(taskId)` - Checks if task is in current selection
 
@@ -272,7 +310,7 @@ const [bulkMove, setBulkMove] = useState(null);  // {baseTaskId, startX, dx, ori
 <Gantt
   tasks={tasks}
   marqueeSelect={true}
-  undo={true}  // Enable undo for bulk move
+  undo={true} // Enable undo for bulk move
 />
 ```
 
