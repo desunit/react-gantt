@@ -364,9 +364,13 @@ function Bars(props) {
         const startY = e.clientY - rect.top;
 
         // Track click position for paste target (copyPaste feature)
-        // startX is already in content-space (getBoundingClientRect accounts for scroll)
+        // Need to add scroll offset to convert from viewport-space to content-space
         if (copyPaste) {
-          const clickDate = pixelToDate(startX, scalesValue);
+          // Find the scroll container (parent .wx-chart element)
+          const scrollContainer = container.closest('.wx-chart') || container.parentElement;
+          const scrollLeft = scrollContainer ? scrollContainer.scrollLeft : 0;
+          const contentX = startX + scrollLeft;
+          const clickDate = pixelToDate(contentX, scalesValue);
           if (clickDate) {
             setPasteTargetDate(clickDate);
           }
