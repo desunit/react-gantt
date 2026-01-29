@@ -17,6 +17,22 @@ import Links from './Links.jsx';
 import BarSegments from './BarSegments.jsx';
 import './Bars.css';
 
+// Module-level clipboard (persists across renders)
+let clipboardTasks = [];
+let clipboardBaseDate = null;
+let clipboardParent = null;
+
+// Pixel to date conversion helper - snaps to cell start (beginning of week/day/etc)
+const pixelToDate = (px, scales) => {
+  if (!scales || !scales.start) return null;
+  const { start, lengthUnitWidth, lengthUnit } = scales;
+  const msPerDay = 86400000;
+  const daysPerUnit = lengthUnit === 'week' ? 7 : lengthUnit === 'month' ? 30 : lengthUnit === 'quarter' ? 91 : lengthUnit === 'year' ? 365 : 1;
+  // Floor to snap to the beginning of the cell
+  const units = Math.floor(px / lengthUnitWidth);
+  return new Date(start.getTime() + units * daysPerUnit * msPerDay);
+};
+
 function Bars(props) {
   const {
     readonly,
@@ -24,6 +40,7 @@ function Bars(props) {
     multiTaskRows = false,
     rowMapping = null,
     marqueeSelect = false,
+    copyPaste = false,
   } = props;
 
   const api = useContext(storeContext);
@@ -45,8 +62,16 @@ function Bars(props) {
     if (!areaValue || !Array.isArray(rTasksValue)) return [];
     const start = areaValue.start ?? 0;
     const end = areaValue.end ?? 0;
+
+    // When multiTaskRows is enabled, the store's area calculation doesn't account
+    // for reduced row count. Include all tasks and let CSS overflow handle visibility.
+    // This is safe because the container height is already correctly calculated.
+    if (multiTaskRows && rowMapping) {
+      return rTasksValue.map((a) => ({ ...a }));
+    }
+
     return rTasksValue.slice(start, end).map((a) => ({ ...a }));
-  }, [rTasksCounter, areaValue]);
+  }, [rTasksCounter, areaValue, multiTaskRows, rowMapping]);
 
   // Adjust task $y positions for multiTaskRows
   const cellHeight = useStore(api, 'cellHeight');
@@ -104,6 +129,8 @@ function Bars(props) {
   const [marquee, setMarquee] = useState(null);
   // Bulk move state
   const [bulkMove, setBulkMove] = useState(null);
+  // Paste target position (for copy/paste feature)
+  const [pasteTargetDate, setPasteTargetDate] = useState(null);
 
   const containerRef = useRef(null);
 
@@ -316,6 +343,16 @@ function Bars(props) {
         const startX = e.clientX - rect.left;
         const startY = e.clientY - rect.top;
 
+        // Track click position for paste target (copyPaste feature)
+        if (copyPaste) {
+          const scrollLeft = container.parentElement?.scrollLeft || 0;
+          const clickX = startX + scrollLeft;
+          const clickDate = pixelToDate(clickX, scalesValue);
+          if (clickDate) {
+            setPasteTargetDate(clickDate);
+          }
+        }
+
         setMarquee({
           startX,
           startY,
@@ -375,7 +412,7 @@ function Bars(props) {
 
       down(node, e);
     },
-    [down, marqueeSelect, readonly, selectedValue, isTaskSelected, api, getMoveMode, schedule, startDrag],
+    [down, marqueeSelect, copyPaste, readonly, selectedValue, isTaskSelected, api, getMoveMode, schedule, startDrag, scalesValue],
   );
 
   const touchstart = useCallback(
@@ -437,7 +474,7 @@ function Bars(props) {
 
       if (diff !== 0) {
         let isFirst = true;
-        originalPositions.forEach((origPos, taskId) => {
+        originalPositions.forEach((_origPos, taskId) => {
           const task = api.getTask(taskId);
           if (task) {
             api.exec('update-task', {
@@ -878,6 +915,101 @@ function Bars(props) {
     },
     [schedule, tree, linkFrom],
   );
+
+  // Refs for copy/paste handlers to avoid re-registering intercept
+  const pasteTargetDateRef = useRef(null);
+  pasteTargetDateRef.current = pasteTargetDate;
+
+  // Copy handler - stores selected tasks in module-level clipboard
+  // Only allows copying tasks from the same parent (company), but different rows are OK
+  const handleCopy = useCallback(() => {
+    const selected = api.getState()._selected;
+    if (!selected || !selected.length) return;
+
+    // Get all selected tasks
+    const tasks = selected.map((sel) => {
+      const task = api.getTask(sel.id);
+      if (!task) return null;
+      const { $x, $y, $w, $h, $skip, $level, $index, $y_base, $x_base, $w_base, $h_base, $skip_baseline, $critical, $reorder, ...clean } = task;
+      return clean;
+    }).filter(Boolean);
+
+    if (!tasks.length) return;
+
+    // Check that all tasks have the same parent (company)
+    const firstTask = tasks[0];
+    const commonParent = firstTask.parent;
+
+    // Filter to only include tasks with matching parent (different rows OK)
+    const validTasks = tasks.filter(t => t.parent === commonParent);
+
+    if (validTasks.length === 0) return;
+
+    // Store clipboard data (each task keeps its own row)
+    clipboardTasks = validTasks;
+    clipboardParent = commonParent;
+
+    // Store base date (earliest start)
+    clipboardBaseDate = clipboardTasks.reduce((min, t) => {
+      if (!t.start) return min;
+      return !min || t.start < min ? t.start : min;
+    }, null);
+  }, [api]);
+
+  // Paste handler - creates new tasks at paste target position
+  // Tasks are pasted within the same parent, each task keeps its original row
+  const handlePaste = useCallback(() => {
+    const targetDate = pasteTargetDateRef.current;
+    if (!clipboardTasks.length || !targetDate || !clipboardBaseDate) return;
+    // Note: clipboardParent can be 0 (root level), so check for undefined/null specifically
+    if (clipboardParent === undefined || clipboardParent === null) return;
+
+    // Calculate time offset
+    const offsetMs = targetDate.getTime() - clipboardBaseDate.getTime();
+
+    const history = api.getHistory();
+    history?.startBatch();
+
+    clipboardTasks.forEach((task, i) => {
+      const newId = `task-${Date.now()}-${i}`;
+      const newStart = task.start ? new Date(task.start.getTime() + offsetMs) : null;
+      const newEnd = task.end ? new Date(task.end.getTime() + offsetMs) : null;
+
+      api.exec('add-task', {
+        task: {
+          ...task,
+          id: newId,
+          start: newStart,
+          end: newEnd,
+          // Keep original parent and row from copied task
+          parent: clipboardParent,
+          row: task.row, // Each task keeps its own row
+        },
+        target: clipboardParent,
+        mode: 'child',
+        skipUndo: i > 0,
+      });
+    });
+
+    history?.endBatch();
+  }, [api]);
+
+  // Hotkey intercept for copy/paste
+  useEffect(() => {
+    if (!copyPaste) return;
+
+    const unsub = api.intercept('hotkey', (ev) => {
+      if (ev.key === 'ctrl+c' || ev.key === 'meta+c') {
+        handleCopy();
+        return false;
+      }
+      if (ev.key === 'ctrl+v' || ev.key === 'meta+v') {
+        handlePaste();
+        return false;
+      }
+    });
+    return unsub;
+  }, [copyPaste, api, handleCopy, handlePaste]);
 
   // Compute marquee rectangle style
   const marqueeStyle = useMemo(() => {

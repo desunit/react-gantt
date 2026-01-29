@@ -24,10 +24,11 @@ export interface ITask extends IBaseTask {
   row?: TID | number;
 }
 
-// Extended config with multiTaskRows, marqueeSelect, and current week support
+// Extended config with multiTaskRows, marqueeSelect, copyPaste, and current week support
 export interface IGanttConfig extends IConfig {
   multiTaskRows?: boolean;
   marqueeSelect?: boolean;
+  copyPaste?: boolean;
   currentWeekHighlight?: boolean;
   currentWeekColor?: string;
   scrollToCurrentWeek?: boolean;

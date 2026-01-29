@@ -90,6 +90,7 @@ const Gantt = forwardRef(function Gantt(
     splitTasks = false,
     multiTaskRows = false,
     marqueeSelect = false,
+    copyPaste = false,
     currentWeekHighlight = false,
     currentWeekColor = null,
     scrollToCurrentWeek = false,
@@ -382,6 +383,7 @@ const Gantt = forwardRef(function Gantt(
           multiTaskRows={multiTaskRows}
           rowMapping={rowMapping}
           marqueeSelect={marqueeSelect}
+          copyPaste={copyPaste}
           scrollToCurrentWeek={scrollToCurrentWeek}
           currentWeekColor={currentWeekColor}
         />

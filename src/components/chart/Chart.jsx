@@ -26,6 +26,7 @@ function Chart(props) {
     multiTaskRows = false,
     rowMapping = null,
     marqueeSelect = false,
+    copyPaste = false,
     scrollToCurrentWeek = false,
     currentWeekColor = null,
   } = props;
@@ -389,6 +390,7 @@ function Chart(props) {
           multiTaskRows={multiTaskRows}
           rowMapping={rowMapping}
           marqueeSelect={marqueeSelect}
+          copyPaste={copyPaste}
         />
       </div>
     </div>

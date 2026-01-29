@@ -52,8 +52,16 @@ export default function Grid(props) {
 
   const tasks = useMemo(() => {
     if (!rTasksVal || !areaVal) return [];
+
+    // When multiTaskRows is enabled, the store's area calculation doesn't account
+    // for reduced row count. Include all tasks and let CSS overflow handle visibility.
+    // This is safe because the container height is already correctly calculated.
+    if (multiTaskRows && rowMapping) {
+      return rTasksVal;
+    }
+
     return rTasksVal.slice(areaVal.start, areaVal.end);
-  }, [rTasksVal, areaVal]);
+  }, [rTasksVal, areaVal, multiTaskRows, rowMapping]);
 
   const execAction = useCallback(
     (id, action) => {

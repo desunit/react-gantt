@@ -26,6 +26,7 @@ function Layout(props) {
     multiTaskRows = false,
     rowMapping = null,
     marqueeSelect = false,
+    copyPaste = false,
     scrollToCurrentWeek = false,
     currentWeekColor = null,
   } = props;
@@ -38,6 +39,27 @@ function Layout(props) {
   const rColumns = useStore(api, 'columns');
   const rScrollTask = useStore(api, '_scrollTask');
   const undo = useStore(api, 'undo');
+
+  // Compute rowMapping using reactive store tasks (updates when tasks are added/removed)
+  const computedRowMapping = useMemo(() => {
+    if (!multiTaskRows) return rowMapping;
+
+    // Build rowMapping from current store tasks
+    const rowMap = new Map(); // rowId -> taskIds[]
+    const taskRows = new Map(); // taskId -> rowId
+
+    rTasks.forEach((task) => {
+      const rowId = task.row ?? task.id;
+      taskRows.set(task.id, rowId);
+
+      if (!rowMap.has(rowId)) {
+        rowMap.set(rowId, []);
+      }
+      rowMap.get(rowId).push(task.id);
+    });
+
+    return { rowMap, taskRows };
+  }, [rTasks, multiTaskRows, rowMapping]);
   const [compactMode, setCompactMode] = useState(false);
   let [gridWidth, setGridWidth] = useState(0);
   const [ganttWidth, setGanttWidth] = useState(0);
@@ -97,17 +119,17 @@ function Layout(props) {
   );
   const fullWidth = useMemo(() => rScales.width, [rScales]);
   const fullHeight = useMemo(() => {
-    if (!multiTaskRows || !rowMapping) {
+    if (!multiTaskRows || !computedRowMapping) {
       return rTasks.length * rCellHeight;
     }
     // Count unique rows
     const uniqueRows = new Set();
     rTasks.forEach((task) => {
-      const rowId = rowMapping.taskRows.get(task.id) ?? task.id;
+      const rowId = computedRowMapping.taskRows.get(task.id) ?? task.id;
       uniqueRows.add(rowId);
     });
     return uniqueRows.size * rCellHeight;
-  }, [rTasks, rCellHeight, multiTaskRows, rowMapping]);
+  }, [rTasks, rCellHeight, multiTaskRows, computedRowMapping]);
   const scrollHeight = useMemo(
     () => rScales.height + fullHeight + scrollSize,
     [rScales, fullHeight, scrollSize],
@@ -291,7 +313,7 @@ function Layout(props) {
                   fullHeight={fullHeight}
                   onTableAPIChange={onTableAPIChange}
                   multiTaskRows={multiTaskRows}
-                  rowMapping={rowMapping}
+                  rowMapping={computedRowMapping}
                 />
                 <Resizer
                   value={gridWidth}
@@ -313,8 +335,9 @@ function Layout(props) {
                 cellBorders={cellBorders}
                 highlightTime={highlightTime}
                 multiTaskRows={multiTaskRows}
-                rowMapping={rowMapping}
+                rowMapping={computedRowMapping}
                 marqueeSelect={marqueeSelect}
+                copyPaste={copyPaste}
                 scrollToCurrentWeek={scrollToCurrentWeek}
                 currentWeekColor={currentWeekColor}
               />
