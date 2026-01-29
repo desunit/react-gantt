@@ -151,7 +151,11 @@ export default function Grid(props) {
     [api],
   );
 
-  const scrollDelta = useMemo(() => areaVal?.from ?? 0, [areaVal]);
+  // When multiTaskRows is enabled, we show all rows without virtualization, so no offset needed
+  const scrollDelta = useMemo(() => {
+    if (multiTaskRows && rowMapping) return 0;
+    return areaVal?.from ?? 0;
+  }, [areaVal, multiTaskRows, rowMapping]);
   const headerHeight = useMemo(() => scalesVal?.height ?? 0, [scalesVal]);
 
   const scrollX = useMemo(() => {

@@ -33,6 +33,26 @@ const pixelToDate = (px, scales) => {
   return new Date(start.getTime() + units * daysPerUnit * msPerDay);
 };
 
+// Get cell offset (in whole cells) between two dates
+const getCellOffset = (date, baseDate, scales) => {
+  if (!scales || !date || !baseDate) return 0;
+  const { lengthUnit } = scales;
+  const msPerDay = 86400000;
+  const daysPerUnit = lengthUnit === 'week' ? 7 : lengthUnit === 'month' ? 30 : lengthUnit === 'quarter' ? 91 : lengthUnit === 'year' ? 365 : 1;
+  const msPerUnit = daysPerUnit * msPerDay;
+  return Math.round((date.getTime() - baseDate.getTime()) / msPerUnit);
+};
+
+// Add cells to a date
+const addCells = (date, cells, scales) => {
+  if (!scales || !date) return date;
+  const { lengthUnit } = scales;
+  const msPerDay = 86400000;
+  const daysPerUnit = lengthUnit === 'week' ? 7 : lengthUnit === 'month' ? 30 : lengthUnit === 'quarter' ? 91 : lengthUnit === 'year' ? 365 : 1;
+  const msPerUnit = daysPerUnit * msPerDay;
+  return new Date(date.getTime() + cells * msPerUnit);
+};
+
 function Bars(props) {
   const {
     readonly,
@@ -127,6 +147,8 @@ function Bars(props) {
 
   // Marquee selection state
   const [marquee, setMarquee] = useState(null);
+  // Ref to track latest marquee coords (since React state may not update before mouseup)
+  const marqueeRef = useRef(null);
   // Bulk move state
   const [bulkMove, setBulkMove] = useState(null);
   // Paste target position (for copy/paste feature)
@@ -233,28 +255,26 @@ function Bars(props) {
     return yMap;
   }, [rTasksValue, multiTaskRows, rowMapping, cellHeight]);
 
-  // Get tasks intersecting with a rectangle (viewport-relative coordinates)
+  // Get tasks intersecting with a rectangle
+  // Marquee coordinates are already in content-space because getBoundingClientRect()
+  // on a scrolled element returns position accounting for scroll offset
   const getIntersectingTasks = useCallback(
     (rect) => {
       const container = containerRef.current;
       if (!container) return [];
 
-      // Get current scroll offsets
-      const scrollLeft = container.parentElement?.scrollLeft || 0;
-      const scrollTop = container.parentElement?.parentElement?.scrollTop || 0;
-
+      // Marquee coords are already content-space (no scroll adjustment needed)
+      // because getBoundingClientRect() on .wx-bars accounts for parent scroll
       const minX = Math.min(rect.startX, rect.currentX);
       const maxX = Math.max(rect.startX, rect.currentX);
       const minY = Math.min(rect.startY, rect.currentY);
       const maxY = Math.max(rect.startY, rect.currentY);
 
       return rTasksValue.filter((task) => {
-        // Task positions are absolute (content space)
-        // Convert to viewport-relative by subtracting scroll
-        const taskLeft = task.$x - scrollLeft;
-        const taskRight = task.$x + task.$w - scrollLeft;
+        const taskLeft = task.$x;
+        const taskRight = task.$x + task.$w;
         const taskAbsoluteY = taskYPositions.get(task.id) ?? task.$y;
-        const taskTop = taskAbsoluteY - scrollTop;
+        const taskTop = taskAbsoluteY;
         const taskBottom = taskTop + task.$h;
 
         return (
@@ -344,22 +364,23 @@ function Bars(props) {
         const startY = e.clientY - rect.top;
 
         // Track click position for paste target (copyPaste feature)
+        // startX is already in content-space (getBoundingClientRect accounts for scroll)
         if (copyPaste) {
-          const scrollLeft = container.parentElement?.scrollLeft || 0;
-          const clickX = startX + scrollLeft;
-          const clickDate = pixelToDate(clickX, scalesValue);
+          const clickDate = pixelToDate(startX, scalesValue);
           if (clickDate) {
             setPasteTargetDate(clickDate);
           }
         }
 
-        setMarquee({
+        const marqueeData = {
           startX,
           startY,
           currentX: startX,
           currentY: startY,
           ctrlKey: e.ctrlKey || e.metaKey,
-        });
+        };
+        setMarquee(marqueeData);
+        marqueeRef.current = marqueeData;
         startDrag();
         return;
       }
@@ -437,31 +458,37 @@ function Bars(props) {
 
   const up = useCallback(() => {
     // Handle marquee selection finalization
-    if (marquee) {
-      const intersecting = getIntersectingTasks(marquee);
+    // Use ref instead of state since React may not have flushed state updates yet
+    const currentMarquee = marqueeRef.current;
+    if (currentMarquee) {
+      const intersecting = getIntersectingTasks(currentMarquee);
 
-      if (marquee.ctrlKey) {
+      if (currentMarquee.ctrlKey) {
         // Additive selection: toggle each intersecting task
         intersecting.forEach((task) => {
           api.exec('select-task', { id: task.id, toggle: true, marquee: true });
         });
       } else {
         // Replace selection: clear and select all intersecting
-        // First clear selection
-        if (selectedValue.length > 0) {
-          api.exec('select-task', { id: null, marquee: true });
-        }
-        // Then select all intersecting tasks
-        intersecting.forEach((task, index) => {
-          api.exec('select-task', {
-            id: task.id,
-            toggle: index > 0, // First one replaces, rest toggle (add)
-            marquee: true,
+        // Only clear if we have tasks to select (don't clear on empty click)
+        if (intersecting.length > 0) {
+          // First clear selection
+          if (selectedValue.length > 0) {
+            api.exec('select-task', { id: null, marquee: true });
+          }
+          // Then select all intersecting tasks
+          intersecting.forEach((task, index) => {
+            api.exec('select-task', {
+              id: task.id,
+              toggle: index > 0, // First one replaces, rest toggle (add)
+              marquee: true,
+            });
           });
-        });
+        }
       }
 
       setMarquee(null);
+      marqueeRef.current = null;
       endDrag();
       ignoreNextClickRef.current = true;
       return;
@@ -579,11 +606,16 @@ function Bars(props) {
           const currentX = clientX - rect.left;
           const currentY = clientY - rect.top;
 
+          // Update both state (for rendering) and ref (for immediate access in mouseup)
           setMarquee((prev) => ({
             ...prev,
             currentX,
             currentY,
           }));
+          if (marqueeRef.current) {
+            marqueeRef.current.currentX = currentX;
+            marqueeRef.current.currentY = currentY;
+          }
           return;
         }
 
@@ -945,16 +977,21 @@ function Bars(props) {
 
     if (validTasks.length === 0) return;
 
-    // Store clipboard data (each task keeps its own row)
-    clipboardTasks = validTasks;
-    clipboardParent = commonParent;
-
     // Store base date (earliest start)
-    clipboardBaseDate = clipboardTasks.reduce((min, t) => {
+    const baseDate = validTasks.reduce((min, t) => {
       if (!t.start) return min;
       return !min || t.start < min ? t.start : min;
     }, null);
-  }, [api]);
+
+    // Store clipboard data with cell offsets (to preserve alignment)
+    clipboardTasks = validTasks.map(t => ({
+      ...t,
+      _startCellOffset: getCellOffset(t.start, baseDate, scalesValue),
+      _durationCells: getCellOffset(t.end, t.start, scalesValue),
+    }));
+    clipboardParent = commonParent;
+    clipboardBaseDate = baseDate;
+  }, [api, scalesValue]);
 
   // Paste handler - creates new tasks at paste target position
   // Tasks are pasted within the same parent, each task keeps its original row
@@ -964,16 +1001,14 @@ function Bars(props) {
     // Note: clipboardParent can be 0 (root level), so check for undefined/null specifically
     if (clipboardParent === undefined || clipboardParent === null) return;
 
-    // Calculate time offset
-    const offsetMs = targetDate.getTime() - clipboardBaseDate.getTime();
-
     const history = api.getHistory();
     history?.startBatch();
 
     clipboardTasks.forEach((task, i) => {
       const newId = `task-${Date.now()}-${i}`;
-      const newStart = task.start ? new Date(task.start.getTime() + offsetMs) : null;
-      const newEnd = task.end ? new Date(task.end.getTime() + offsetMs) : null;
+      // Use cell offsets to preserve alignment
+      const newStart = addCells(targetDate, task._startCellOffset || 0, scalesValue);
+      const newEnd = addCells(newStart, task._durationCells || 0, scalesValue);
 
       api.exec('add-task', {
         task: {

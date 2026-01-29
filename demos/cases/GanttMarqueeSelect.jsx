@@ -118,7 +118,7 @@ export default function GanttMarqueeSelect({ skinSettings }) {
           <li>Press Ctrl+Z to undo</li>
         </ul>
       </div>
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
         <Gantt
           {...skinSettings}
           tasks={tasks}
