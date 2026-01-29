@@ -34,7 +34,7 @@ function kt(t) {
 }
 const yt = 5;
 function ln(t, n) {
-  let s, i, o, L, r, y, k, I, w;
+  let s, i, o, L, r, y, k, I, h;
   function D(f) {
     L = f.clientX, r = f.clientY, y = {
       ...on(s, t, f),
@@ -42,12 +42,12 @@ function ln(t, n) {
     }, document.body.style.userSelect = "none";
   }
   function x(f) {
-    s = Ge(f), kt(s) && (o = Xe(s), w = setTimeout(() => {
+    s = Ge(f), kt(s) && (o = Xe(s), h = setTimeout(() => {
       I = !0, n && n.touchStart && n.touchStart(), D(f.touches[0]);
     }, 500), t.addEventListener("touchmove", N), t.addEventListener("contextmenu", M), window.addEventListener("touchend", Q));
   }
   function M(f) {
-    if (I || w)
+    if (I || h)
       return f.preventDefault(), !1;
   }
   function V(f) {
@@ -84,10 +84,10 @@ function ln(t, n) {
     P(f);
   }
   function N(f) {
-    I ? (f.preventDefault(), P(f.touches[0])) : w && (clearTimeout(w), w = null);
+    I ? (f.preventDefault(), P(f.touches[0])) : h && (clearTimeout(h), h = null);
   }
   function Q() {
-    I = null, w && (clearTimeout(w), w = null), G();
+    I = null, h && (clearTimeout(h), h = null), G();
   }
   function T() {
     G();
@@ -140,26 +140,26 @@ function an(t) {
     onTableAPIChange: r,
     multiTaskRows: y = !1,
     rowMapping: k = null
-  } = t, [I, w] = rt(L), [D, x] = ge(), M = He(Pe.i18n), V = v(() => M.getGroup("gantt"), [M]), c = He(Ye), P = Y(c, "scrollTop"), F = Y(c, "cellHeight"), N = Y(c, "_scrollTask"), Q = Y(c, "_selected"), T = Y(c, "area"), G = Y(c, "_tasks"), f = Y(c, "_scales"), j = Y(c, "columns"), se = Y(c, "_sort"), q = Y(c, "calendar"), U = Y(c, "durationUnit"), fe = Y(c, "splitTasks"), [C, R] = ge(null), p = v(() => !G || !T ? [] : G.slice(T.start, T.end), [G, T]), O = S(
-    (l, g) => {
-      if (g === "add-task")
-        c.exec(g, {
+  } = t, [I, h] = rt(L), [D, x] = ge(), M = He(Pe.i18n), V = v(() => M.getGroup("gantt"), [M]), c = He(Ye), P = Y(c, "scrollTop"), F = Y(c, "cellHeight"), N = Y(c, "_scrollTask"), Q = Y(c, "_selected"), T = Y(c, "area"), G = Y(c, "_tasks"), f = Y(c, "_scales"), j = Y(c, "columns"), se = Y(c, "_sort"), q = Y(c, "calendar"), U = Y(c, "durationUnit"), fe = Y(c, "splitTasks"), [C, R] = ge(null), p = v(() => !G || !T ? [] : G.slice(T.start, T.end), [G, T]), O = S(
+    (l, w) => {
+      if (w === "add-task")
+        c.exec(w, {
           target: l,
           task: { text: V("New Task") },
           mode: "child",
           show: !0
         });
-      else if (g === "open-task") {
+      else if (w === "open-task") {
         const $ = p.find((K) => K.id === l);
-        ($?.data || $?.lazy) && c.exec(g, { id: l, mode: !$.open });
+        ($?.data || $?.lazy) && c.exec(w, { id: l, mode: !$.open });
       }
     },
     [p]
   ), J = S(
     (l) => {
-      const g = Ke(l), $ = l.target.dataset.action;
-      $ && l.preventDefault(), g ? $ === "add-task" || $ === "open-task" ? O(g, $) : c.exec("select-task", {
-        id: g,
+      const w = Ke(l), $ = l.target.dataset.action;
+      $ && l.preventDefault(), w ? $ === "add-task" || $ === "open-task" ? O(w, $) : c.exec("select-task", {
+        id: w,
         toggle: l.ctrlKey || l.metaKey,
         range: l.shiftKey,
         show: !0
@@ -170,24 +170,24 @@ function an(t) {
   le(() => {
     const l = ce.current;
     if (!l || typeof ResizeObserver > "u") return;
-    const g = () => ye(l.clientWidth);
-    g();
-    const $ = new ResizeObserver(g);
+    const w = () => ye(l.clientWidth);
+    w();
+    const $ = new ResizeObserver(w);
     return $.observe(l), () => $.disconnect();
   }, []);
   const Te = ie(null), _ = S(
     (l) => {
-      const g = l.id, { before: $, after: K } = l, xe = l.onMove;
+      const w = l.id, { before: $, after: K } = l, xe = l.onMove;
       let we = $ || K, Ce = $ ? "before" : "after";
       if (xe) {
         if (Ce === "after") {
           const Ae = c.getTask(we);
           Ae.data?.length && Ae.open && (Ce = "before", we = Ae.data[0].id);
         }
-        Te.current = { id: g, [Ce]: we };
+        Te.current = { id: w, [Ce]: we };
       } else Te.current = null;
       c.exec("move-task", {
-        id: g,
+        id: w,
         mode: Ce,
         target: we,
         inProgress: xe
@@ -199,13 +199,13 @@ function an(t) {
     return Z && o === "all" || o === "grid" && Z ? l.width = I : o === "grid" && (l.width = "100%"), l;
   }, [Z, o, I]), X = v(() => C && !p.find((l) => l.id === C.id) ? [...p, C] : p, [p, C]), ne = v(() => {
     if (!y || !k) return X;
-    const l = /* @__PURE__ */ new Map(), g = /* @__PURE__ */ new Set();
+    const l = /* @__PURE__ */ new Map(), w = /* @__PURE__ */ new Set();
     return X.forEach(($) => {
       const K = k.taskRows.get($.id) ?? $.id;
-      g.has(K) || (l.set(K, {
+      w.has(K) || (l.set(K, {
         ...$,
         $rowTasks: k.rowMap.get(K) || [$.id]
-      }), g.add(K));
+      }), w.add(K));
     }), Array.from(l.values());
   }, [X, y, k]), b = v(() => {
     let l = (j || []).map((K) => {
@@ -217,8 +217,8 @@ function an(t) {
       } else K.header = V(xe);
       return K;
     });
-    const g = l.findIndex((K) => K.id === "text"), $ = l.findIndex((K) => K.id === "add-task");
-    if (g !== -1 && (l[g].cell && (l[g]._cell = l[g].cell), l[g].cell = cn), $ !== -1) {
+    const w = l.findIndex((K) => K.id === "text"), $ = l.findIndex((K) => K.id === "add-task");
+    if (w !== -1 && (l[w].cell && (l[w]._cell = l[w].cell), l[w].cell = cn), $ !== -1) {
       l[$].cell = l[$].cell || bt;
       const K = l[$].header;
       if (typeof K != "object" && (l[$].header = { text: K }), l[$].header.cell = K.cell || bt, n)
@@ -232,8 +232,8 @@ function an(t) {
   }, [j, V, n, s]), B = v(() => o === "all" ? `${i}px` : o === "grid" ? "calc(100% - 4px)" : b.find((l) => l.id === "add-task") ? "50px" : "0", [o, i, b]), de = v(() => {
     if (ne && se?.length) {
       const l = {};
-      return se.forEach(({ key: g, order: $ }, K) => {
-        l[g] = {
+      return se.forEach(({ key: w, order: $ }, K) => {
+        l[w] = {
           order: $,
           ...se.length > 1 && { index: K }
         };
@@ -242,37 +242,37 @@ function an(t) {
     return {};
   }, [ne, se]), ke = S(() => b.some((l) => l.flexgrow && !l.hidden), []), Ne = v(() => ke(), [ke, ve]), Me = v(() => {
     let l = o === "chart" ? b.filter(($) => $.id === "add-task") : b;
-    const g = o === "all" ? i : ae;
+    const w = o === "all" ? i : ae;
     if (!Ne) {
       let $ = I, K = !1;
       if (b.some((xe) => xe.$width)) {
         let xe = 0;
-        $ = b.reduce((we, Ce) => (Ce.hidden || (xe += Ce.width, we += Ce.$width || Ce.width), we), 0), xe > $ && $ > g && (K = !0);
+        $ = b.reduce((we, Ce) => (Ce.hidden || (xe += Ce.width, we += Ce.$width || Ce.width), we), 0), xe > $ && $ > w && (K = !0);
       }
-      if (K || $ < g) {
+      if (K || $ < w) {
         let xe = 1;
-        return K || (xe = (g - 50) / ($ - 50 || 1)), l.map((we) => (we.id !== "add-task" && !we.hidden && (we.$width || (we.$width = we.width), we.width = we.$width * xe), we));
+        return K || (xe = (w - 50) / ($ - 50 || 1)), l.map((we) => (we.id !== "add-task" && !we.hidden && (we.$width || (we.$width = we.width), we.width = we.$width * xe), we));
       }
     }
     return l;
   }, [o, b, Ne, I, i, ae]), De = S(
     (l) => {
       if (!ke()) {
-        const g = Me.reduce(($, K) => (l && K.$width && (K.$width = K.width), $ + (K.hidden ? 0 : K.width)), 0);
-        g !== I && w(g);
+        const w = Me.reduce(($, K) => (l && K.$width && (K.$width = K.width), $ + (K.hidden ? 0 : K.width)), 0);
+        w !== I && h(w);
       }
       Re(!0), Re(!1);
     },
-    [ke, Me, I, w]
-  ), h = S(() => {
-    b.filter((g) => g.flexgrow && !g.hidden).length === 1 && b.forEach((g) => {
-      g.$width && !g.flexgrow && !g.hidden && (g.width = g.$width);
+    [ke, Me, I, h]
+  ), m = S(() => {
+    b.filter((w) => w.flexgrow && !w.hidden).length === 1 && b.forEach((w) => {
+      w.$width && !w.flexgrow && !w.hidden && (w.width = w.$width);
     });
   }, []), re = S(
     (l) => {
       if (!n) {
-        const g = Ke(l), $ = Ft(l, "data-col-id");
-        !($ && b.find((xe) => xe.id == $))?.editor && g && c.exec("show-editor", { id: g });
+        const w = Ke(l), $ = Ft(l, "data-col-id");
+        !($ && b.find((xe) => xe.id == $))?.editor && w && c.exec("show-editor", { id: w });
       }
     },
     [c, n]
@@ -280,7 +280,7 @@ function an(t) {
   ), me = v(
     () => Array.isArray(Q) ? Q.map((l) => l.id) : [],
     [Q]
-  ), m = S(() => {
+  ), g = S(() => {
     if (te.current && ne !== null) {
       const l = te.current.querySelector(".wx-body");
       l && (l.style.top = -((P ?? 0) - (d ?? 0)) + "px");
@@ -288,48 +288,48 @@ function an(t) {
     ce.current && (ce.current.scrollTop = 0);
   }, [ne, P, d]);
   le(() => {
-    te.current && m();
-  }, [P, d, m]), le(() => {
+    te.current && g();
+  }, [P, d, g]), le(() => {
     const l = te.current;
     if (!l) return;
-    const g = l.querySelector(".wx-table-box .wx-body");
-    if (!g || typeof ResizeObserver > "u") return;
+    const w = l.querySelector(".wx-table-box .wx-body");
+    if (!w || typeof ResizeObserver > "u") return;
     const $ = new ResizeObserver(() => {
-      m();
+      g();
     });
-    return $.observe(g), () => {
+    return $.observe(w), () => {
       $.disconnect();
     };
-  }, [Me, z, o, B, ne, m]), le(() => {
+  }, [Me, z, o, B, ne, g]), le(() => {
     if (!N || !D) return;
-    const { id: l } = N, g = D.getState().focusCell;
-    g && g.row !== l && te.current && te.current.contains(document.activeElement) && D.exec("focus-cell", {
+    const { id: l } = N, w = D.getState().focusCell;
+    w && w.row !== l && te.current && te.current.contains(document.activeElement) && D.exec("focus-cell", {
       row: l,
-      column: g.column
+      column: w.column
     });
   }, [N, D]);
   const ee = S(
     ({ id: l }) => {
       if (n) return !1;
       c.getTask(l).open && c.exec("open-task", { id: l, mode: !1 });
-      const g = c.getState()._tasks.find(($) => $.id === l);
-      if (R(g || null), !g) return !1;
+      const w = c.getState()._tasks.find(($) => $.id === l);
+      if (R(w || null), !w) return !1;
     },
     [c, n]
   ), oe = S(
-    ({ id: l, top: g }) => {
+    ({ id: l, top: w }) => {
       Te.current ? _({ ...Te.current, onMove: !1 }) : c.exec("drag-task", {
         id: l,
-        top: g + (d ?? 0),
+        top: w + (d ?? 0),
         inProgress: !1
       }), R(null);
     },
     [c, _, d]
   ), ze = S(
-    ({ id: l, top: g, detail: $ }) => {
+    ({ id: l, top: w, detail: $ }) => {
       $ && _({ ...$, onMove: !0 }), c.exec("drag-task", {
         id: l,
-        top: g + (d ?? 0),
+        top: w + (d ?? 0),
         inProgress: !0
       });
     },
@@ -346,10 +346,10 @@ function an(t) {
   }, [c, ee, oe, ze]);
   const Le = S(
     (l) => {
-      const { key: g, isInput: $ } = l;
-      if (!$ && (g === "arrowup" || g === "arrowdown"))
+      const { key: w, isInput: $ } = l;
+      if (!$ && (w === "arrowup" || w === "arrowdown"))
         return l.eventSource = "grid", c.exec("hotkey", l), !1;
-      if (g === "enter") {
+      if (w === "enter") {
         const K = D?.getState().focusCell;
         if (K) {
           const { row: xe, column: we } = K;
@@ -364,7 +364,7 @@ function an(t) {
       handleHotkey: Le,
       sortVal: se,
       api: c,
-      adjustColumns: h,
+      adjustColumns: m,
       setColumnWidth: De,
       tasks: p,
       calendarVal: q,
@@ -380,7 +380,7 @@ function an(t) {
     Le,
     se,
     c,
-    h,
+    m,
     De,
     p,
     q,
@@ -389,8 +389,8 @@ function an(t) {
     r
   ]);
   const tt = S((l) => {
-    x(l), l.intercept("hotkey", (g) => $e.current.handleHotkey(g)), l.intercept("scroll", () => !1), l.intercept("select-row", () => !1), l.intercept("sort-rows", (g) => {
-      const $ = $e.current.sortVal, { key: K, add: xe } = g, we = $ ? $.find((Ae) => Ae.key === K) : null;
+    x(l), l.intercept("hotkey", (w) => $e.current.handleHotkey(w)), l.intercept("scroll", () => !1), l.intercept("select-row", () => !1), l.intercept("sort-rows", (w) => {
+      const $ = $e.current.sortVal, { key: K, add: xe } = w, we = $ ? $.find((Ae) => Ae.key === K) : null;
       let Ce = "asc";
       return we && (Ce = !we || we.order === "asc" ? "desc" : "asc"), c.exec("sort-tasks", {
         key: K,
@@ -399,10 +399,10 @@ function an(t) {
       }), !1;
     }), l.on("resize-column", () => {
       $e.current.setColumnWidth(!0);
-    }), l.on("hide-column", (g) => {
-      g.mode || $e.current.adjustColumns(), $e.current.setColumnWidth();
-    }), l.intercept("update-cell", (g) => {
-      const { id: $, column: K, value: xe } = g, we = $e.current.tasks.find((Ce) => Ce.id === $);
+    }), l.on("hide-column", (w) => {
+      w.mode || $e.current.adjustColumns(), $e.current.setColumnWidth();
+    }), l.intercept("update-cell", (w) => {
+      const { id: $, column: K, value: xe } = w, we = $e.current.tasks.find((Ce) => Ce.id === $);
       if (we) {
         const Ce = { ...we };
         let Ae = xe;
@@ -530,12 +530,12 @@ function fn(t) {
   function o(L) {
     if (!n.progress) return 0;
     const r = n.duration * n.progress / 100, y = n.segments;
-    let k = 0, I = 0, w = null;
+    let k = 0, I = 0, h = null;
     do {
       const D = y[I];
-      I === L && (k > r ? w = 0 : w = Math.min((r - k) / D.duration, 1) * 100), k += D.duration, I++;
-    } while (w === null && I < y.length);
-    return w || 0;
+      I === L && (k > r ? h = 0 : h = Math.min((r - k) / D.duration, 1) * 100), k += D.duration, I++;
+    } while (h === null && I < y.length);
+    return h || 0;
   }
   return /* @__PURE__ */ a("div", { className: "wx-segments wx-GKbcLEGA", children: n.segments.map((L, r) => /* @__PURE__ */ Se(
     "div",
@@ -564,7 +564,7 @@ function hn(t) {
     multiTaskRows: i = !1,
     rowMapping: o = null,
     marqueeSelect: L = !1
-  } = t, r = He(Ye), [y, k] = Qe(r, "_tasks"), [I, w] = Qe(r, "_links"), D = Y(r, "area"), x = Y(r, "_scales"), M = Y(r, "taskTypes"), V = Y(r, "baselines"), [c, P] = Qe(r, "_selected"), F = Y(r, "_scrollTask"), N = Y(r, "criticalPath"), Q = Y(r, "tasks"), T = Y(r, "schedule"), G = Y(r, "splitTasks"), f = v(() => {
+  } = t, r = He(Ye), [y, k] = Qe(r, "_tasks"), [I, h] = Qe(r, "_links"), D = Y(r, "area"), x = Y(r, "_scales"), M = Y(r, "taskTypes"), V = Y(r, "baselines"), [c, P] = Qe(r, "_selected"), F = Y(r, "_scrollTask"), N = Y(r, "criticalPath"), Q = Y(r, "tasks"), T = Y(r, "schedule"), G = Y(r, "splitTasks"), f = v(() => {
     if (!D || !Array.isArray(y)) return [];
     const e = D.start ?? 0, u = D.end ?? 0;
     return y.slice(e, u).map((E) => ({ ...E }));
@@ -650,7 +650,7 @@ function hn(t) {
   ), Me = v(() => new Set(c.map((e) => e.id)), [c, P]), De = S(
     (e) => Me.has(e),
     [Me]
-  ), h = S(
+  ), m = S(
     (e, u) => {
       const { clientX: E } = u, A = Xe(e), H = r.getTask(A), ue = u.target.classList;
       if (!u.target.closest(".wx-delete-button") && !n) {
@@ -731,19 +731,19 @@ function hn(t) {
             }
           }
         }
-        h(u, e);
+        m(u, e);
       }
     },
-    [h, L, n, c, De, r, de, T, b]
+    [m, L, n, c, De, r, de, T, b]
   ), me = S(
     (e) => {
       const u = Ge(e);
       u && (ve.current = setTimeout(() => {
-        ye(!0), h(u, e.touches[0]);
+        ye(!0), m(u, e.touches[0]);
       }, 300));
     },
-    [h]
-  ), m = S(
+    [m]
+  ), g = S(
     (e) => {
       ce(e && { ...I.find((u) => u.id === e) });
     },
@@ -862,7 +862,7 @@ function hn(t) {
             inProgress: !0
           });
         } else if (p) {
-          m(null);
+          g(null);
           const { mode: H, l: ue, w: he, x: be, id: pe, start: Ie, segment: We, index: Be } = p, Oe = r.getTask(pe), Ee = E - be;
           if (!Ie && Math.abs(Ee) < 20 || H === "start" && he - Ee < q || H === "end" && he + Ee < q || H === "move" && (Ee < 0 && ue + Ee < 0 || Ee > 0 && ue + he + Ee > Re) || p.segment && !Vt(Oe, p))
             return;
@@ -895,7 +895,7 @@ function hn(t) {
       q,
       Re,
       de,
-      m,
+      g,
       ee,
       _,
       W
@@ -932,12 +932,12 @@ function hn(t) {
       }
     },
     [r, n]
-  ), l = ["e2s", "s2s", "e2e", "s2e"], g = S((e, u) => l[(e ? 1 : 0) + (u ? 0 : 2)], []), $ = S(
+  ), l = ["e2s", "s2s", "e2e", "s2e"], w = S((e, u) => l[(e ? 1 : 0) + (u ? 0 : 2)], []), $ = S(
     (e, u) => {
       const E = C.id, A = C.start;
-      return e === E ? !0 : !!I.find((H) => H.target == e && H.source == E && H.type === g(A, u));
+      return e === E ? !0 : !!I.find((H) => H.target == e && H.source == E && H.type === w(A, u));
     },
-    [C, w, g]
+    [C, h, w]
   ), K = S(() => {
     C && R(null);
   }, [C]), xe = S(
@@ -959,7 +959,7 @@ function hn(t) {
             link: {
               source: C.id,
               target: u,
-              type: g(C.start, A)
+              type: w(C.start, A)
             }
           });
         } else if (E.contains("wx-delete-button-icon"))
@@ -980,10 +980,10 @@ function hn(t) {
     [
       r,
       C,
-      w,
+      h,
       te,
       $,
-      g,
+      w,
       K
     ]
   ), we = S((e) => ({
@@ -1059,7 +1059,7 @@ function hn(t) {
         /* @__PURE__ */ a(
           dn,
           {
-            onSelectLink: m,
+            onSelectLink: g,
             selectedLink: te,
             readonly: n
           }
@@ -1139,13 +1139,13 @@ function mn(t) {
       className: "wx-ZkvhDKir wx-row",
       style: { height: `${o.height}px` },
       children: (o.cells || []).map((r, y) => {
-        const k = n ? n(r.date, r.unit) : "", I = "wx-cell " + (r.css || "") + " " + (k || "");
+        const k = n ? n(r.date, r.unit) : "", I = "wx-cell " + (r.css || "") + " " + (k || ""), h = typeof r.value == "string" && r.value.includes("<");
         return /* @__PURE__ */ a(
           "div",
           {
             className: "wx-ZkvhDKir " + I,
             style: { width: `${r.width}px` },
-            children: r.value
+            ...h ? { dangerouslySetInnerHTML: { __html: r.value } } : { children: r.value }
           },
           y
         );
@@ -1183,7 +1183,7 @@ function xn(t) {
     multiTaskRows: y = !1,
     rowMapping: k = null,
     marqueeSelect: I = !1,
-    scrollToCurrentWeek: w = !1,
+    scrollToCurrentWeek: h = !1,
     currentWeekColor: D = null
   } = t, x = He(Ye), [M, V] = Qe(x, "_selected"), c = Y(x, "scrollTop"), P = Y(x, "cellHeight"), F = Y(x, "cellWidth"), N = Y(x, "_scales"), Q = Y(x, "_markers"), T = Y(x, "_scrollTask"), G = Y(x, "zoom"), f = Y(x, "_tasks"), [j, se] = ge(), q = ie(null), U = ie(0), fe = ie(!1), C = 1 + (N?.rows?.length || 0), R = v(() => {
     if (!y || !k || !f?.length) return null;
@@ -1312,7 +1312,7 @@ function xn(t) {
       d.removeEventListener("wheel", W);
     };
   }, [ye]), le(() => {
-    if (!w || fe.current || !N || !q.current || !j) return;
+    if (!h || fe.current || !N || !q.current || !j) return;
     const d = q.current, { clientWidth: W } = d, Z = /* @__PURE__ */ new Date(), z = N.rows[N.rows.length - 1]?.cells;
     if (!z) return;
     let X = -1, ne = 0;
@@ -1332,7 +1332,7 @@ function xn(t) {
       const de = b[B], ke = Math.max(0, de.left);
       d.scrollLeft = ke, x.exec("scroll-chart", { left: ke }), fe.current = !0;
     }
-  }, [w, N, j, x]), wn("chart"), /* @__PURE__ */ Se(
+  }, [h, N, j, x]), wn("chart"), /* @__PURE__ */ Se(
     "div",
     {
       className: "wx-mR7v2Xag wx-chart",
@@ -1423,7 +1423,7 @@ function pn(t) {
     containerWidth: y = 0,
     leftThreshold: k = 50,
     rightThreshold: I = 50
-  } = t, [w, D] = rt(t.value ?? 0), [x, M] = rt(t.display ?? "all");
+  } = t, [h, D] = rt(t.value ?? 0), [x, M] = rt(t.display ?? "all");
   function V(ce) {
     let ae = 0;
     n == "center" ? ae = s / 2 : n == "before" && (ae = s);
@@ -1440,8 +1440,8 @@ function pn(t) {
   le(() => {
     f.current = x;
   }, [x]), le(() => {
-    F === null && w > 0 && N(w);
-  }, [F, w]);
+    F === null && h > 0 && N(h);
+  }, [F, h]);
   function j(ce) {
     return i == "x" ? ce.clientX : ce.clientY;
   }
@@ -1460,9 +1460,9 @@ function pn(t) {
     [x, i]
   ), fe = S(
     (ce) => {
-      !r && (x === "grid" || x === "chart") || (Q.current = j(ce), T.current = w, P(!0), document.body.style.cursor = U, document.body.style.userSelect = "none", window.addEventListener("mousemove", se), window.addEventListener("mouseup", q));
+      !r && (x === "grid" || x === "chart") || (Q.current = j(ce), T.current = h, P(!0), document.body.style.cursor = U, document.body.style.userSelect = "none", window.addEventListener("mousemove", se), window.addEventListener("mouseup", q));
     },
-    [U, se, q, w, r, x]
+    [U, se, q, h, r, x]
   );
   function C() {
     M("all"), F !== null && (D(F), o && o(F));
@@ -1484,7 +1484,7 @@ function pn(t) {
   function O() {
     R("right");
   }
-  const J = v(() => V(w), [w, n, s, i]), te = [
+  const J = v(() => V(h), [h, n, s, i]), te = [
     "wx-resizer",
     `wx-resizer-${i}`,
     `wx-resizer-display-${x}`,
@@ -1549,7 +1549,7 @@ function yn(t) {
     rowMapping: y = null,
     marqueeSelect: k = !1,
     scrollToCurrentWeek: I = !1,
-    currentWeekColor: w = null
+    currentWeekColor: h = null
   } = t, D = He(Ye), x = Y(D, "_tasks"), M = Y(D, "_scales"), V = Y(D, "cellHeight"), c = Y(D, "columns"), P = Y(D, "_scrollTask"), F = Y(D, "undo"), [N, Q] = ge(!1);
   let [T, G] = ge(0);
   const [f, j] = ge(0), [se, q] = ge(0), [U, fe] = ge(void 0), [C, R] = ge("all"), p = ie(null), O = S(
@@ -1639,11 +1639,11 @@ function yn(t) {
         ganttHeight: De
       } = Z.current;
       if (!Me) return;
-      const { id: h } = b, re = B.findIndex((me) => me.id === h);
+      const { id: m } = b, re = B.findIndex((me) => me.id === m);
       if (re > -1) {
-        const me = De - de.height, m = re * ke, ee = Me.scrollTop;
+        const me = De - de.height, g = re * ke, ee = Me.scrollTop;
         let oe = null;
-        m < ee ? oe = m : m + ke > ee + me && (oe = m - me + ke + Ne), oe !== null && (D.exec("scroll-chart", { top: Math.max(oe, 0) }), _.current.scrollTop = Math.max(oe, 0));
+        g < ee ? oe = g : g + ke > ee + me && (oe = g - me + ke + Ne), oe !== null && (D.exec("scroll-chart", { top: Math.max(oe, 0) }), _.current.scrollTop = Math.max(oe, 0));
       }
     },
     [D]
@@ -1742,7 +1742,7 @@ function yn(t) {
                 rowMapping: y,
                 marqueeSelect: k,
                 scrollToCurrentWeek: I,
-                currentWeekColor: w
+                currentWeekColor: h
               }
             ) })
           ] })
@@ -1812,7 +1812,7 @@ const Cn = (t) => t.split("-").map((n) => n ? n.charAt(0).toUpperCase() + n.slic
   links: y = [],
   scales: k = Rn,
   columns: I = Ut,
-  start: w = null,
+  start: h = null,
   end: D = null,
   lengthUnit: x = "day",
   durationUnit: M = "day",
@@ -1844,38 +1844,38 @@ const Cn = (t) => t.split("-").map((n) => n ? n.charAt(0).toUpperCase() + n.slic
   const Te = ie();
   Te.current = ve;
   const _ = v(() => new qt(Jt), []), d = v(() => ({ ...ot, ...et }), []), W = He(Pe.i18n), Z = v(() => W ? W.extend(d, !0) : Je(d), [W, d]), z = v(() => Z.getRaw().calendar, [Z]), X = v(() => {
-    let m = {
+    let g = {
       zoom: Mn(Q, z),
       scales: St(k, z),
       columns: $n(I, z),
       links: Bt(y),
       cellWidth: V
     };
-    return m.zoom && (m = {
-      ...m,
+    return g.zoom && (g = {
+      ...g,
       ...jt(
-        m.zoom,
+        g.zoom,
         Tn(z, Z.getGroup("gantt")),
-        m.scales,
+        g.scales,
         V
       )
-    }), m;
+    }), g;
   }, [Q, k, I, y, V, z, Z]), ne = ie(null);
   ne.current !== o && (gt(o, { durationUnit: M, splitTasks: O, calendar: R }), ne.current = o), le(() => {
     gt(o, { durationUnit: M, splitTasks: O, calendar: R });
   }, [o, M, R, O]);
   const b = v(() => {
     if (!J) return null;
-    const m = /* @__PURE__ */ new Map(), ee = /* @__PURE__ */ new Map(), oe = (ze) => {
+    const g = /* @__PURE__ */ new Map(), ee = /* @__PURE__ */ new Map(), oe = (ze) => {
       ze.forEach((Le) => {
         const $e = Le.row ?? Le.id;
-        ee.set(Le.id, $e), m.has($e) || m.set($e, []), m.get($e).push(Le.id), Le.data && Le.data.length > 0 && oe(Le.data);
+        ee.set(Le.id, $e), g.has($e) || g.set($e, []), g.get($e).push(Le.id), Le.data && Le.data.length > 0 && oe(Le.data);
       });
     };
-    return oe(o), { rowMap: m, taskRows: ee };
+    return oe(o), { rowMap: g, taskRows: ee };
   }, [o, J]), B = v(() => _.in, [_]), de = ie(null);
-  de.current === null && (de.current = new Ot((m, ee) => {
-    const oe = "on" + Cn(m);
+  de.current === null && (de.current = new Ot((g, ee) => {
+    const oe = "on" + Cn(g);
     Te.current && Te.current[oe] && Te.current[oe](ee);
   }), B.setNext(de.current));
   const [ke, Ne] = ge(null), Me = ie(null);
@@ -1886,13 +1886,13 @@ const Cn = (t) => t.split("-").map((n) => n ? n.charAt(0).toUpperCase() + n.slic
       getReactiveState: _.getReactive.bind(_),
       getStores: () => ({ data: _ }),
       exec: B.exec,
-      setNext: (m) => (de.current = de.current.setNext(m), de.current),
+      setNext: (g) => (de.current = de.current.setNext(g), de.current),
       intercept: B.intercept.bind(B),
       on: B.on.bind(B),
       detach: B.detach.bind(B),
       getTask: _.getTask.bind(_),
       serialize: _.serialize.bind(_),
-      getTable: (m) => m ? new Promise((ee) => setTimeout(() => ee(Me.current), 1)) : Me.current,
+      getTable: (g) => g ? new Promise((ee) => setTimeout(() => ee(Me.current), 1)) : Me.current,
       getHistory: () => _.getHistory()
     }),
     [_, B]
@@ -1904,12 +1904,12 @@ const Cn = (t) => t.split("-").map((n) => n ? n.charAt(0).toUpperCase() + n.slic
     }),
     [De]
   );
-  const h = ie(0);
+  const m = ie(0);
   le(() => {
-    h.current ? _.init({
+    m.current ? _.init({
       tasks: o,
       links: X.links,
-      start: w,
+      start: h,
       columns: X.columns,
       end: D,
       lengthUnit: x,
@@ -1934,13 +1934,13 @@ const Cn = (t) => t.split("-").map((n) => n ? n.charAt(0).toUpperCase() + n.slic
       undo: p,
       _weekStart: z.weekStart,
       splitTasks: O
-    }) : f && f(De), h.current++;
+    }) : f && f(De), m.current++;
   }, [
     De,
     f,
     o,
     X,
-    w,
+    h,
     D,
     x,
     c,
@@ -1962,10 +1962,10 @@ const Cn = (t) => t.split("-").map((n) => n ? n.charAt(0).toUpperCase() + n.slic
     z,
     O,
     _
-  ]), h.current === 0 && _.init({
+  ]), m.current === 0 && _.init({
     tasks: o,
     links: X.links,
-    start: w,
+    start: h,
     columns: X.columns,
     end: D,
     lengthUnit: x,
@@ -1992,19 +1992,19 @@ const Cn = (t) => t.split("-").map((n) => n ? n.charAt(0).toUpperCase() + n.slic
     splitTasks: O
   });
   const re = v(() => {
-    const m = /* @__PURE__ */ new Date(), ee = z?.weekStart ?? 0, oe = new Date(m), Le = (oe.getDay() - ee + 7) % 7;
+    const g = /* @__PURE__ */ new Date(), ee = z?.weekStart ?? 0, oe = new Date(g), Le = (oe.getDay() - ee + 7) % 7;
     oe.setDate(oe.getDate() - Le), oe.setHours(0, 0, 0, 0);
     const $e = new Date(oe);
     return $e.setDate($e.getDate() + 7), (Fe) => Fe >= oe && Fe < $e;
-  }, [z]), me = v(() => (m, ee) => {
+  }, [z]), me = v(() => (g, ee) => {
     let oe = [];
     if (R)
-      ee == "day" && !R.getDayHours(m) && oe.push("wx-weekend"), ee == "hour" && !R.getDayHours(m) && oe.push("wx-weekend");
+      ee == "day" && !R.getDayHours(g) && oe.push("wx-weekend"), ee == "hour" && !R.getDayHours(g) && oe.push("wx-weekend");
     else if (G) {
-      const ze = G(m, ee);
+      const ze = G(g, ee);
       ze && oe.push(ze);
     }
-    return ce && (ee === "week" || ee === "day") && re(m) && oe.push("wx-current-week"), oe.join(" ");
+    return ce && (ee === "week" || ee === "day") && re(g) && oe.push("wx-current-week"), oe.join(" ");
   }, [R, G, ce, re]);
   return /* @__PURE__ */ a(Pe.i18n.Provider, { value: Z, children: /* @__PURE__ */ a(Ye.Provider, { value: De, children: /* @__PURE__ */ a(
     yn,
@@ -2023,7 +2023,7 @@ const Cn = (t) => t.split("-").map((n) => n ? n.charAt(0).toUpperCase() + n.slic
   ) }) });
 });
 function Vn({ api: t = null, items: n = [] }) {
-  const s = He(Pe.i18n), i = v(() => s || Je(et), [s]), o = v(() => i.getGroup("gantt"), [i]), L = _e(t, "_selected"), r = _e(t, "undo"), y = _e(t, "history"), k = _e(t, "splitTasks"), I = ["undo", "redo"], w = v(() => {
+  const s = He(Pe.i18n), i = v(() => s || Je(et), [s]), o = v(() => i.getGroup("gantt"), [i]), L = _e(t, "_selected"), r = _e(t, "undo"), y = _e(t, "history"), k = _e(t, "splitTasks"), I = ["undo", "redo"], h = v(() => {
     const x = wt({ undo: !0, splitTasks: !0 });
     return (n.length ? n : wt({
       undo: r,
@@ -2034,7 +2034,7 @@ function Vn({ api: t = null, items: n = [] }) {
     });
   }, [n, t, o, r, k]), D = v(() => {
     const x = [];
-    return w.forEach((M) => {
+    return h.forEach((M) => {
       const V = M.id;
       if (V === "add-task")
         x.push(M);
@@ -2059,7 +2059,7 @@ function Vn({ api: t = null, items: n = [] }) {
       }
       return !0;
     });
-  }, [t, L, y, w]);
+  }, [t, L, y, h]);
   return s ? /* @__PURE__ */ a(pt, { items: D }) : /* @__PURE__ */ a(Pe.i18n.Provider, { value: i, children: /* @__PURE__ */ a(pt, { items: D }) });
 }
 const qn = vt(function({
@@ -2072,12 +2072,12 @@ const qn = vt(function({
   onClick: y,
   css: k
 }, I) {
-  const w = ie(null), D = ie(null), x = He(Pe.i18n), M = v(() => x || Je({ ...et, ...ot }), [x]), V = v(() => M.getGroup("gantt"), [M]), c = _e(s, "taskTypes"), P = _e(s, "selected"), F = _e(s, "_selected"), N = _e(s, "splitTasks"), Q = v(() => xt({ splitTasks: !0 }), []);
+  const h = ie(null), D = ie(null), x = He(Pe.i18n), M = v(() => x || Je({ ...et, ...ot }), [x]), V = v(() => M.getGroup("gantt"), [M]), c = _e(s, "taskTypes"), P = _e(s, "selected"), F = _e(s, "_selected"), N = _e(s, "splitTasks"), Q = v(() => xt({ splitTasks: !0 }), []);
   le(() => {
     s && (s.on("scroll-chart", () => {
-      w.current && w.current.show && w.current.show();
+      h.current && h.current.show && h.current.show();
     }), s.on("drag-task", () => {
-      w.current && w.current.show && w.current.show();
+      h.current && h.current.show && h.current.show();
     }));
   }, [s]);
   function T(R) {
@@ -2130,11 +2130,11 @@ const qn = vt(function({
   );
   Tt(I, () => ({
     show: (R, p) => {
-      w.current && w.current.show && w.current.show(R, p);
+      h.current && h.current.show && h.current.show(R, p);
     }
   }));
   const fe = S((R) => {
-    w.current && w.current.show && w.current.show(R);
+    h.current && h.current.show && h.current.show(R);
   }, []), C = /* @__PURE__ */ Se(qe, { children: [
     /* @__PURE__ */ a(
       sn,
@@ -2145,7 +2145,7 @@ const qn = vt(function({
         resolver: se,
         onClick: q,
         at: L,
-        ref: w,
+        ref: h,
         css: k
       }
     ),
@@ -2158,7 +2158,7 @@ const qn = vt(function({
   return C;
 });
 function En({ api: t, autoSave: n, onLinksChange: s }) {
-  const o = He(Pe.i18n).getGroup("gantt"), L = Y(t, "activeTask"), r = Y(t, "_activeTask"), y = Y(t, "_links"), k = Y(t, "schedule"), I = Y(t, "unscheduledTasks"), [w, D] = ge();
+  const o = He(Pe.i18n).getGroup("gantt"), L = Y(t, "activeTask"), r = Y(t, "_activeTask"), y = Y(t, "_links"), k = Y(t, "schedule"), I = Y(t, "unscheduledTasks"), [h, D] = ge();
   function x() {
     if (L) {
       const P = y.filter((N) => N.target == L).map((N) => ({ link: N, task: t.getTask(N.source) })), F = y.filter((N) => N.source == L).map((N) => ({ link: N, task: t.getTask(N.target) }));
@@ -2212,7 +2212,7 @@ function En({ api: t, autoSave: n, onLinksChange: s }) {
       }
     }));
   }
-  return /* @__PURE__ */ a(qe, { children: (w || []).map(
+  return /* @__PURE__ */ a(qe, { children: (h || []).map(
     (P, F) => P.data.length ? /* @__PURE__ */ a("div", { className: "wx-j93aYGQf wx-links", children: /* @__PURE__ */ a(Dt, { label: P.title, position: "top", children: /* @__PURE__ */ a("table", { children: /* @__PURE__ */ a("tbody", { children: P.data.map((N) => /* @__PURE__ */ Se("tr", { children: [
       /* @__PURE__ */ a("td", { className: "wx-j93aYGQf wx-cell", children: /* @__PURE__ */ a("div", { className: "wx-j93aYGQf wx-task-name", children: N.task.text || "" }) }),
       k?.auto && N.link.type === "e2s" ? /* @__PURE__ */ a("td", { className: "wx-j93aYGQf wx-cell wx-link-lag", children: /* @__PURE__ */ a(
@@ -2251,8 +2251,8 @@ function En({ api: t, autoSave: n, onLinksChange: s }) {
 function Sn(t) {
   const { value: n, time: s, format: i, onchange: o, onChange: L, ...r } = t, y = L ?? o;
   function k(I) {
-    const w = new Date(I.value);
-    w.setHours(n.getHours()), w.setMinutes(n.getMinutes()), y && y({ value: w });
+    const h = new Date(I.value);
+    h.setHours(n.getHours()), h.setMinutes(n.getMinutes()), y && y({ value: h });
   }
   return /* @__PURE__ */ Se("div", { className: "wx-hFsbgDln date-time-controll", children: [
     /* @__PURE__ */ a(
@@ -2286,14 +2286,14 @@ function Bn({
   topBar: y = !0,
   autoSave: k = !0,
   focus: I = !1,
-  hotkeys: w = {}
+  hotkeys: h = {}
 }) {
   const D = He(Pe.i18n), x = v(() => D || Je({ ...et, ...ot }), [D]), M = v(() => x.getGroup("gantt"), [x]), V = x.getRaw(), c = v(() => {
-    const h = V.gantt?.dateFormat || V.formats?.dateFormat;
-    return Ze(h, V.calendar);
+    const m = V.gantt?.dateFormat || V.formats?.dateFormat;
+    return Ze(m, V.calendar);
   }, [V]), P = v(() => {
     if (y === !0 && !o) {
-      const h = [
+      const m = [
         { comp: "icon", icon: "wxi-close", id: "close" },
         { comp: "spacer" },
         {
@@ -2303,9 +2303,9 @@ function Bn({
           id: "delete"
         }
       ];
-      return k ? { items: h } : {
+      return k ? { items: m } : {
         items: [
-          ...h,
+          ...m,
           {
             comp: "button",
             type: "primary",
@@ -2319,13 +2319,13 @@ function Bn({
   }, [y, o, k, M]), [F, N] = ge(!1), Q = v(
     () => F ? "wx-full-screen" : "",
     [F]
-  ), T = S((h) => {
-    N(h);
+  ), T = S((m) => {
+    N(m);
   }, []);
   le(() => {
-    const h = Et(T);
-    return h.observe(), () => {
-      h.disconnect();
+    const m = Et(T);
+    return m.observe(), () => {
+      m.disconnect();
     };
   }, [T]);
   const G = Y(t, "_activeTask"), f = Y(t, "activeTask"), j = Y(t, "unscheduledTasks"), se = Y(t, "links"), q = Y(t, "splitTasks"), U = v(
@@ -2339,91 +2339,91 @@ function Bn({
     [j]
   ), R = Y(t, "undo"), [p, O] = ge({}), [J, te] = ge(null), [ce, ae] = ge(), [ye, ve] = ge(null), Re = Y(t, "taskTypes"), Te = v(() => {
     if (!G) return null;
-    let h;
-    if (fe && G.segments ? h = { ...G.segments[U] } : h = { ...G }, o) {
-      let re = { parent: h.parent };
-      return C.forEach(({ key: me, comp: m }) => {
-        if (m !== "links") {
-          const ee = h[me];
-          m === "date" && ee instanceof Date ? re[me] = c(ee) : m === "slider" && me === "progress" ? re[me] = `${ee}%` : re[me] = ee;
+    let m;
+    if (fe && G.segments ? m = { ...G.segments[U] } : m = { ...G }, o) {
+      let re = { parent: m.parent };
+      return C.forEach(({ key: me, comp: g }) => {
+        if (g !== "links") {
+          const ee = m[me];
+          g === "date" && ee instanceof Date ? re[me] = c(ee) : g === "slider" && me === "progress" ? re[me] = `${ee}%` : re[me] = ee;
         }
       }), re;
     }
-    return h || null;
+    return m || null;
   }, [G, fe, U, o, C, c]);
   le(() => {
     ae(Te);
   }, [Te]), le(() => {
     O({}), ve(null), te(null);
   }, [f]);
-  function _(h, re) {
-    return h.map((me) => {
-      const m = { ...me };
-      if (me.config && (m.config = { ...m.config }), m.comp === "links" && t && (m.api = t, m.autoSave = k, m.onLinksChange = Z), m.comp === "select" && m.key === "type") {
-        const ee = m.options ?? (Re || []);
-        m.options = ee.map((oe) => ({
+  function _(m, re) {
+    return m.map((me) => {
+      const g = { ...me };
+      if (me.config && (g.config = { ...g.config }), g.comp === "links" && t && (g.api = t, g.autoSave = k, g.onLinksChange = Z), g.comp === "select" && g.key === "type") {
+        const ee = g.options ?? (Re || []);
+        g.options = ee.map((oe) => ({
           ...oe,
           label: M(oe.label)
         }));
       }
-      return m.comp === "slider" && m.key === "progress" && (m.labelTemplate = (ee) => `${M(m.label)} ${ee}%`), m.label && (m.label = M(m.label)), m.config?.placeholder && (m.config.placeholder = M(m.config.placeholder)), re && (m.isDisabled && m.isDisabled(re, t.getState()) ? m.disabled = !0 : delete m.disabled), m;
+      return g.comp === "slider" && g.key === "progress" && (g.labelTemplate = (ee) => `${M(g.label)} ${ee}%`), g.label && (g.label = M(g.label)), g.config?.placeholder && (g.config.placeholder = M(g.config.placeholder)), re && (g.isDisabled && g.isDisabled(re, t.getState()) ? g.disabled = !0 : delete g.disabled), g;
     });
   }
   const d = v(() => {
-    let h = n.length ? n : C;
-    return h = _(h, ce), ce ? h.filter(
+    let m = n.length ? n : C;
+    return m = _(m, ce), ce ? m.filter(
       (re) => !re.isHidden || !re.isHidden(ce, t.getState())
-    ) : h;
+    ) : m;
   }, [n, C, ce, Re, M, t, k]), W = v(
-    () => d.map((h) => h.key),
+    () => d.map((m) => m.key),
     [d]
   );
-  function Z({ id: h, action: re, data: me }) {
-    O((m) => ({
-      ...m,
-      [h]: { action: re, data: me }
+  function Z({ id: m, action: re, data: me }) {
+    O((g) => ({
+      ...g,
+      [m]: { action: re, data: me }
     }));
   }
   const z = S(() => {
-    for (let h in p)
-      if (se.byId(h)) {
-        const { action: re, data: me } = p[h];
+    for (let m in p)
+      if (se.byId(m)) {
+        const { action: re, data: me } = p[m];
         t.exec(re, me);
       }
   }, [t, p, se]), X = S(() => {
-    const h = f?.id || f;
+    const m = f?.id || f;
     if (fe) {
       if (G?.segments) {
         const re = G.segments.filter(
-          (me, m) => m !== U
+          (me, g) => g !== U
         );
         t.exec("update-task", {
-          id: h,
+          id: m,
           task: { segments: re }
         });
       }
     } else
-      t.exec("delete-task", { id: h });
+      t.exec("delete-task", { id: m });
   }, [t, f, fe, G, U]), ne = S(() => {
     t.exec("show-editor", { id: null });
   }, [t]), b = S(
-    (h) => {
-      const { item: re, changes: me } = h;
+    (m) => {
+      const { item: re, changes: me } = m;
       re.id === "delete" && X(), re.id === "save" && (me.length ? ne() : z()), re.comp && ne();
     },
     [t, f, k, z, X, ne]
   ), B = S(
-    (h, re, me) => (j && h.type === "summary" && (h.unscheduled = !1), $t(h, t.getState(), re), me || te(!1), h),
+    (m, re, me) => (j && m.type === "summary" && (m.unscheduled = !1), $t(m, t.getState(), re), me || te(!1), m),
     [j, t]
   ), de = S(
-    (h) => {
-      h = {
-        ...h,
-        unscheduled: j && h.unscheduled && h.type !== "summary"
-      }, delete h.links, delete h.data, (W.indexOf("duration") === -1 || h.segments && !h.duration) && delete h.duration;
+    (m) => {
+      m = {
+        ...m,
+        unscheduled: j && m.unscheduled && m.type !== "summary"
+      }, delete m.links, delete m.data, (W.indexOf("duration") === -1 || m.segments && !m.duration) && delete m.duration;
       const re = {
         id: f?.id || f,
-        task: h,
+        task: m,
         ...fe && { segmentIndex: U }
       };
       k && J && (re.inProgress = J), t.exec("update-task", re), k || z();
@@ -2440,29 +2440,29 @@ function Bn({
       J
     ]
   ), ke = S(
-    (h) => {
-      let { update: re, key: me, input: m } = h;
-      if (m && te(!0), h.update = B({ ...re }, me, m), !k) ae(h.update);
-      else if (!ye && !m) {
+    (m) => {
+      let { update: re, key: me, input: g } = m;
+      if (g && te(!0), m.update = B({ ...re }, me, g), !k) ae(m.update);
+      else if (!ye && !g) {
         const ee = d.find((Le) => Le.key === me), oe = re[me];
-        (!ee.validation || ee.validation(oe)) && (!ee.required || oe) && de(h.update);
+        (!ee.validation || ee.validation(oe)) && (!ee.required || oe) && de(m.update);
       }
     },
     [k, B, ye, d, de]
   ), Ne = S(
-    (h) => {
-      k || de(h.values);
+    (m) => {
+      k || de(m.values);
     },
     [k, de]
-  ), Me = S((h) => {
-    ve(h.errors);
+  ), Me = S((m) => {
+    ve(m.errors);
   }, []), De = v(
     () => R ? {
-      "ctrl+z": (h) => {
-        h.preventDefault(), t.exec("undo");
+      "ctrl+z": (m) => {
+        m.preventDefault(), t.exec("undo");
       },
-      "ctrl+y": (h) => {
-        h.preventDefault(), t.exec("redo");
+      "ctrl+y": (m) => {
+        m.preventDefault(), t.exec("redo");
       }
     } : {},
     [R, t]
@@ -2484,7 +2484,7 @@ function Bn({
       onSave: Ne,
       onValidation: Me,
       onChange: ke,
-      hotkeys: w && { ...De, ...w }
+      hotkeys: h && { ...De, ...h }
     }
   ) }) : null;
 }
@@ -2495,7 +2495,7 @@ const jn = ({ children: t, columns: n = null, api: s }) => {
   }, [s]), /* @__PURE__ */ a(tn, { api: i, columns: n, children: t });
 };
 function Un(t) {
-  const { api: n, content: s, children: i } = t, o = ie(null), L = ie(null), [r, y] = ge({}), [k, I] = ge(null), [w, D] = ge({});
+  const { api: n, content: s, children: i } = t, o = ie(null), L = ie(null), [r, y] = ge({}), [k, I] = ge(null), [h, D] = ge({});
   function x(T) {
     for (; T; ) {
       if (T.getAttribute) {
@@ -2508,12 +2508,12 @@ function Un(t) {
   }
   le(() => {
     const T = L.current;
-    if (T && w && (w.text || s)) {
+    if (T && h && (h.text || s)) {
       const G = T.getBoundingClientRect();
-      let f = !1, j = w.left, se = w.top;
-      G.right >= r.right && (j = r.width - G.width - 5, f = !0), G.bottom >= r.bottom && (se = w.top - (G.bottom - r.bottom + 2), f = !0), f && D((q) => q && { ...q, left: j, top: se });
+      let f = !1, j = h.left, se = h.top;
+      G.right >= r.right && (j = r.width - G.width - 5, f = !0), G.bottom >= r.bottom && (se = h.top - (G.bottom - r.bottom + 2), f = !0), f && D((q) => q && { ...q, left: j, top: se });
     }
-  }, [w, r, s]);
+  }, [h, r, s]);
   const M = ie(null), V = 300, c = (T) => {
     clearTimeout(M.current), M.current = setTimeout(() => {
       T();
@@ -2553,13 +2553,13 @@ function Un(t) {
       ref: o,
       onMouseMove: P,
       children: [
-        w && (w.text || s) ? /* @__PURE__ */ a(
+        h && (h.text || s) ? /* @__PURE__ */ a(
           "div",
           {
             className: "wx-KG0Lwsqo wx-gantt-tooltip",
             ref: L,
-            style: { top: `${w.top}px`, left: `${w.left}px` },
-            children: s ? /* @__PURE__ */ a(s, { data: k }) : w.text ? /* @__PURE__ */ a("div", { className: "wx-KG0Lwsqo wx-gantt-tooltip-text", children: w.text }) : null
+            style: { top: `${h.top}px`, left: `${h.left}px` },
+            children: s ? /* @__PURE__ */ a(s, { data: k }) : h.text ? /* @__PURE__ */ a("div", { className: "wx-KG0Lwsqo wx-gantt-tooltip-text", children: h.text }) : null
           }
         ) : null,
         i

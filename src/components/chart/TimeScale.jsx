@@ -23,14 +23,15 @@ function TimeScale(props) {
               : '';
             const className =
               'wx-cell ' + (cell.css || '') + ' ' + (extraClass || '');
+            // Support HTML in scale cell values (for multi-line templates)
+            const isHtml = typeof cell.value === 'string' && cell.value.includes('<');
             return (
               <div
                 className={'wx-ZkvhDKir ' + className}
                 style={{ width: `${cell.width}px` }}
                 key={cellIdx}
-              >
-                {cell.value}
-              </div>
+                {...(isHtml ? { dangerouslySetInnerHTML: { __html: cell.value } } : { children: cell.value })}
+              />
             );
           })}
         </div>

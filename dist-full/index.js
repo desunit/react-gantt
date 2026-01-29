@@ -8275,13 +8275,13 @@ function Zc(t) {
       className: "wx-ZkvhDKir wx-row",
       style: { height: `${s.height}px` },
       children: (s.cells || []).map((i, l) => {
-        const a = e ? e(i.date, i.unit) : "", c = "wx-cell " + (i.css || "") + " " + (a || "");
+        const a = e ? e(i.date, i.unit) : "", c = "wx-cell " + (i.css || "") + " " + (a || ""), d = typeof i.value == "string" && i.value.includes("<");
         return /* @__PURE__ */ g(
           "div",
           {
             className: "wx-ZkvhDKir " + c,
             style: { width: `${i.width}px` },
-            children: i.value
+            ...d ? { dangerouslySetInnerHTML: { __html: i.value } } : { children: i.value }
           },
           l
         );
