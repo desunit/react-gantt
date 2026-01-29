@@ -348,20 +348,43 @@ export default function Grid(props) {
     [selectedVal],
   );
 
-  const setScrollOffset = useCallback(() => {
-    if (tableRef.current && gridRows !== null) {
-      const body = tableRef.current.querySelector('.wx-body');
-      if (body)
-        body.style.top = -((scrollTopVal ?? 0) - (scrollDelta ?? 0)) + 'px';
-    }
-    if (tableContainerRef.current) tableContainerRef.current.scrollTop = 0;
-  }, [gridRows, scrollTopVal, scrollDelta]);
+  // Direct scroll sync via event listener (bypasses React state for performance)
+  const scrollDeltaRef = useRef(scrollDelta);
+  scrollDeltaRef.current = scrollDelta;
 
   useEffect(() => {
+    const updateScrollOffset = (scrollTop) => {
+      if (tableRef.current) {
+        const body = tableRef.current.querySelector('.wx-body');
+        if (body) {
+          body.style.top = -((scrollTop ?? 0) - (scrollDeltaRef.current ?? 0)) + 'px';
+        }
+      }
+      if (tableContainerRef.current) tableContainerRef.current.scrollTop = 0;
+    };
+
+    // Initial sync
+    updateScrollOffset(scrollTopVal);
+
+    // Listen directly to scroll-chart events for immediate sync
+    const unsubscribe = api.on('scroll-chart', ({ top }) => {
+      if (top !== undefined) {
+        updateScrollOffset(top);
+      }
+    });
+
+    return unsubscribe;
+  }, [api, scrollTopVal]);
+
+  // Update on scrollDelta change (area virtualization)
+  useEffect(() => {
     if (tableRef.current) {
-      setScrollOffset();
+      const body = tableRef.current.querySelector('.wx-body');
+      if (body) {
+        body.style.top = -((scrollTopVal ?? 0) - (scrollDelta ?? 0)) + 'px';
+      }
     }
-  }, [scrollTopVal, scrollDelta, setScrollOffset]);
+  }, [scrollDelta]);
 
   useEffect(() => {
     const tableEl = tableRef.current;
@@ -369,13 +392,19 @@ export default function Grid(props) {
     const bodyEl = tableEl.querySelector('.wx-table-box .wx-body');
     if (!bodyEl || typeof ResizeObserver === 'undefined') return;
     const ro = new ResizeObserver(() => {
-      setScrollOffset();
+      // Re-sync scroll offset on resize
+      if (tableRef.current) {
+        const body = tableRef.current.querySelector('.wx-body');
+        if (body) {
+          body.style.top = -((scrollTopVal ?? 0) - (scrollDeltaRef.current ?? 0)) + 'px';
+        }
+      }
     });
     ro.observe(bodyEl);
     return () => {
       ro.disconnect();
     };
-  }, [fitColumns, tableStyle, display, basis, gridRows, setScrollOffset]);
+  }, [fitColumns, tableStyle, display, basis, gridRows, scrollTopVal]);
 
   useEffect(() => {
     if (!scrollTask || !tableAPI) return;
