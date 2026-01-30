@@ -6558,7 +6558,7 @@ function qc(t) {
     return I.forEach((v) => {
       v.fixed = 0;
     }), I;
-  }, [w, b]), oe = $(() => (w || []).reduce((I, v) => (v.hidden || (I += v.width), I), 0), [w]), Re = 1;
+  }, [w, b]), oe = $(() => (w || []).reduce((I, v) => (v.hidden || (I += v.width), I), 0), [w]), Ie = 1;
   function ve(I, v, C) {
     let A = v, Y = I;
     if (ee.length) {
@@ -6580,7 +6580,7 @@ function qc(t) {
     const A = he, Y = he + (u || 0);
     let V = 0, W = 0, Z = 0, ie = 0;
     ee.forEach((tt, nt) => {
-      A > Z && (V = nt, ie = Z), Z = Z + tt.width, Y > Z && (W = nt + Re);
+      A > Z && (V = nt, ie = Z), Z = Z + tt.width, Y > Z && (W = nt + Ie);
     });
     const fe = { header: 0, footer: 0 };
     for (let tt = W; tt >= V; tt--)
@@ -6593,7 +6593,7 @@ function qc(t) {
           }
         });
       });
-    const ye = ve(V, ie, "header"), Ie = ve(V, ie, "footer"), Ve = ye.delta, Ue = ye.index, qe = Ie.delta, Fe = Ie.index;
+    const xe = ve(V, ie, "header"), Re = ve(V, ie, "footer"), Ve = xe.delta, Ue = xe.index, qe = Re.delta, Fe = Re.index;
     return P && oe > (u || 0) ? I = v = C = [...j.columns, ...ee, ...le.columns] : (I = [
       ...j.columns,
       ...ee.slice(V, W + 1),
@@ -6625,10 +6625,10 @@ function qc(t) {
   ]), me = $(
     () => e && k?.headerHeight || 0,
     [e, k]
-  ), xe = $(
+  ), ye = $(
     () => n && k?.footerHeight || 0,
     [n, k]
-  ), Se = $(() => u && h ? oe >= u : !1, [u, h, oe]), U = $(() => (h || 0) - me - xe - (Se ? B : 0), [h, me, xe, Se, B]), ke = $(() => Math.ceil((U || 0) / (ae || 1)) + 1, [U, ae]), Te = F([]), [pe, He] = K(0), [$e, Pe] = K(void 0), Ne = $(() => {
+  ), Se = $(() => u && h ? oe >= u : !1, [u, h, oe]), U = $(() => (h || 0) - me - ye - (Se ? B : 0), [h, me, ye, Se, B]), ke = $(() => Math.ceil((U || 0) / (ae || 1)) + 1, [U, ae]), Te = F([]), [pe, He] = K(0), [$e, Pe] = K(void 0), Ne = $(() => {
     let I = 0, v = 0;
     const C = 2;
     if (c) {
@@ -6642,23 +6642,23 @@ function qc(t) {
     } else {
       if (N) {
         let V = 0, W = 0;
-        for (let ye = 0; ye < (y || []).length; ye++) {
-          const Ie = y[ye].rowHeight || ae;
-          if (W + Ie > ce) {
-            V = ye;
+        for (let xe = 0; xe < (y || []).length; xe++) {
+          const Re = y[xe].rowHeight || ae;
+          if (W + Re > ce) {
+            V = xe;
             break;
           }
-          W += Ie;
+          W += Re;
         }
         I = Math.max(0, V - C);
-        for (let ye = 0; ye < I; ye++)
-          v += y[ye].rowHeight || ae;
+        for (let xe = 0; xe < I; xe++)
+          v += y[xe].rowHeight || ae;
         let Z = 0, ie = 0;
-        for (let ye = V + 1; ye < (y || []).length; ye++) {
-          const Ie = y[ye].rowHeight || ae;
-          if (Z++, ie + Ie > U)
+        for (let xe = V + 1; xe < (y || []).length; xe++) {
+          const Re = y[xe].rowHeight || ae;
+          if (Z++, ie + Re > U)
             break;
-          ie += Ie;
+          ie += Re;
         }
         const fe = Math.min(
           x ? x.rowCount : (y || []).length,
@@ -6689,12 +6689,12 @@ function qc(t) {
     pe,
     Ne.d,
     $e
-  ]), We = $(() => u && h ? Le + me + xe >= h - (oe >= (u || 0) ? B : 0) : !1, [
+  ]), We = $(() => u && h ? Le + me + ye >= h - (oe >= (u || 0) ? B : 0) : !1, [
     u,
     h,
     Le,
     me,
-    xe,
+    ye,
     oe,
     B
   ]), Ye = $(() => P && oe <= (u || 0) ? (u || 0) - 0 - (We ? B : 0) : oe, [P, oe, u, We, B, Se]), L = $(() => P && oe <= (u || 0) ? u || 0 : Ye < (u || 0) ? oe + (We ? B : 0) : -1, [P, oe, u, Ye, We, B]), te = F({});
@@ -6733,7 +6733,7 @@ function qc(t) {
     "ignore-click": () => !1
   }), Tt = $(() => ({
     top: me,
-    bottom: xe,
+    bottom: ye,
     left: j.width,
     xScroll: Se,
     yScroll: We,
@@ -6741,7 +6741,7 @@ function qc(t) {
     node: we.current && we.current.firstElementChild
   }), [
     me,
-    xe,
+    ye,
     j.width,
     Se,
     We,
@@ -6755,7 +6755,7 @@ function qc(t) {
       return !1;
     _e(Y), f.getRow(Y).open && f.exec("close-row", { id: Y, nested: !0 });
     const V = Ke(A, "data-id"), W = V.cloneNode(!0);
-    W.classList.remove("wx-selected"), W.querySelectorAll("[tabindex]").forEach((ye) => ye.setAttribute("tabindex", "-1")), C.appendChild(W), q(W);
+    W.classList.remove("wx-selected"), W.querySelectorAll("[tabindex]").forEach((xe) => xe.setAttribute("tabindex", "-1")), C.appendChild(W), q(W);
     const Z = he - X.d, ie = We ? B : 0;
     C.style.width = Math.min(
       (u || 0) - ie,
@@ -6782,7 +6782,7 @@ function qc(t) {
         v.to = Z;
         const ie = c ? de?.offsetHeight : k?.rowHeight;
         if (de && (ce === 0 || A.y > V + ie - 1)) {
-          const fe = W.getBoundingClientRect(), ye = kn(de).y, Ie = fe.y, Ve = ye > Ie ? -1 : 1, Ue = Ve === 1 ? "after" : "before", qe = Math.abs(f.getRowIndex(C) - f.getRowIndex(Z)), Fe = qe !== 1 ? Ue === "before" ? "after" : "before" : Ue;
+          const fe = W.getBoundingClientRect(), xe = kn(de).y, Re = fe.y, Ve = xe > Re ? -1 : 1, Ue = Ve === 1 ? "after" : "before", qe = Math.abs(f.getRowIndex(C) - f.getRowIndex(Z)), Fe = qe !== 1 ? Ue === "before" ? "after" : "before" : Ue;
           if (qe === 1 && (Ve === -1 && I.clientY > ft.current || Ve === 1 && I.clientY < ft.current))
             return;
           ft.current = I.clientY, f.exec("move-item", {
@@ -6893,7 +6893,7 @@ function qc(t) {
         className: "wx-4VuBwK2D " + dn,
         style: {
           "--header-height": `${me}px`,
-          "--footer-height": `${xe}px`,
+          "--footer-height": `${ye}px`,
           "--split-left-width": `${j.width}px`,
           "--split-right-width": `${le.width}px`
         },
@@ -7365,7 +7365,7 @@ function td(t) {
       }
     }
     return L.length > 0 && (L[L.length - 1].resize = !1), L;
-  }, [_, m, e, n]), Re = $(() => s === "all" ? `${r}px` : s === "grid" ? "calc(100% - 4px)" : oe.find((L) => L.id === "add-task") ? "50px" : "0", [s, r, oe]), ve = $(() => {
+  }, [_, m, e, n]), Ie = $(() => s === "all" ? `${r}px` : s === "grid" ? "calc(100% - 4px)" : oe.find((L) => L.id === "add-task") ? "50px" : "0", [s, r, oe]), ve = $(() => {
     if (ee && E?.length) {
       const L = {};
       return E.forEach(({ key: te, order: ne }, ue) => {
@@ -7376,7 +7376,7 @@ function td(t) {
       }), L;
     }
     return {};
-  }, [ee, E]), X = R(() => oe.some((L) => L.flexgrow && !L.hidden), []), me = $(() => X(), [X, P]), xe = $(() => {
+  }, [ee, E]), X = R(() => oe.some((L) => L.flexgrow && !L.hidden), []), me = $(() => X(), [X, P]), ye = $(() => {
     let L = s === "chart" ? oe.filter((ne) => ne.id === "add-task") : oe;
     const te = s === "all" ? r : ce;
     if (!me) {
@@ -7394,12 +7394,12 @@ function td(t) {
   }, [s, oe, me, c, r, ce]), Se = R(
     (L) => {
       if (!X()) {
-        const te = xe.reduce((ne, ue) => (L && ue.$width && (ue.$width = ue.width), ne + (ue.hidden ? 0 : ue.width)), 0);
+        const te = ye.reduce((ne, ue) => (L && ue.$width && (ue.$width = ue.width), ne + (ue.hidden ? 0 : ue.width)), 0);
         te !== c && d(te);
       }
       ae(!0), ae(!1);
     },
-    [X, xe, c, d]
+    [X, ye, c, d]
   ), U = R(() => {
     oe.filter((te) => te.flexgrow && !te.hidden).length === 1 && oe.forEach((te) => {
       te.$width && !te.flexgrow && !te.hidden && (te.width = te.$width);
@@ -7447,7 +7447,7 @@ function td(t) {
     return ne.observe(te), () => {
       ne.disconnect();
     };
-  }, [xe, j, s, Re, ee, x]), G(() => {
+  }, [ye, j, s, Ie, ee, x]), G(() => {
     if (!y || !u) return;
     const { id: L } = y, te = u.getState().focusCell;
     te && te.row !== L && he.current && he.current.contains(document.activeElement) && u.exec("focus-cell", {
@@ -7573,7 +7573,7 @@ function td(t) {
     "div",
     {
       className: "wx-rHj6070p wx-table-container",
-      style: { flex: `0 0 ${Re}` },
+      style: { flex: `0 0 ${Ie}` },
       ref: Q,
       children: /* @__PURE__ */ p(
         "div",
@@ -7594,7 +7594,7 @@ function td(t) {
               rowStyle: (L) => L.$reorder ? "wx-rHj6070p wx-reorder-task" : "wx-rHj6070p",
               columnStyle: (L) => `wx-rHj6070p wx-text-${L.align}${L.id === "add-task" ? " wx-action" : ""}`,
               data: ee,
-              columns: xe,
+              columns: ye,
               selectedRows: [...Te],
               sortMarks: ve
             }
@@ -7752,9 +7752,9 @@ function ld(t) {
   ), z = $(
     () => m.lengthUnit || "day",
     [m]
-  ), H = F(!1), [N, B] = K(void 0), [se, he] = K(null), Q = F(null), [ce, be] = K(null), [P, ae] = K(void 0), we = F(null), [ge, _e] = K(0), [de, q] = K(null), j = F(null), [le, ee] = K(null), [oe, Re] = K(null), [ve, X] = K(null), me = F(null);
+  ), H = F(!1), [N, B] = K(void 0), [se, he] = K(null), Q = F(null), [ce, be] = K(null), [P, ae] = K(void 0), we = F(null), [ge, _e] = K(0), [de, q] = K(null), j = F(null), [le, ee] = K(null), [oe, Ie] = K(null), [ve, X] = K(null), me = F(null);
   me.current = oe;
-  const xe = F(200), Se = F(null), U = $(() => {
+  const ye = F(200), Se = F(null), U = $(() => {
     const v = Se.current;
     return !!(w.length && v && v.contains(document.activeElement));
   }, [w, Se.current]), ke = $(() => U && w[w.length - 1]?.id, [U, w]);
@@ -7791,7 +7791,8 @@ function ld(t) {
   ), $e = $(() => {
     const v = /* @__PURE__ */ new Set();
     if (a || !r || !s)
-      return v;
+      return console.log("[collision] skipping - allowTaskIntersection:", a, "multiTaskRows:", r, "rowMapping:", !!s), v;
+    console.log("[collision] checking overlaps...");
     const C = /* @__PURE__ */ new Map();
     return c.forEach((A) => {
       if (A.type === "summary" || A.type === "milestone") return;
@@ -7801,10 +7802,10 @@ function ld(t) {
       if (!(A.length < 2))
         for (let Y = 0; Y < A.length; Y++)
           for (let V = Y + 1; V < A.length; V++) {
-            const W = A[Y], Z = A[V], ie = W.$x, fe = W.$x + W.$w, ye = Z.$x, Ie = Z.$x + Z.$w;
-            ad(ie, fe, ye, Ie) && (v.add(W.id), v.add(Z.id));
+            const W = A[Y], Z = A[V], ie = W.$x, fe = W.$x + W.$w, xe = Z.$x, Re = Z.$x + Z.$w;
+            ad(ie, fe, xe, Re) && (console.log("[collision] found overlap:", W.id, Z.id, "bounds:", ie, fe, xe, Re), v.add(W.id), v.add(Z.id));
           }
-    }), v;
+    }), console.log("[collision] total overlapping tasks:", v.size), v;
   }, [a, r, s, c, d]), Pe = $(() => {
     const v = /* @__PURE__ */ new Map();
     if (!r || !s)
@@ -7837,8 +7838,8 @@ function ld(t) {
       if (!Se.current) return [];
       const A = Math.min(v.startX, v.currentX), Y = Math.max(v.startX, v.currentX), V = Math.min(v.startY, v.currentY), W = Math.max(v.startY, v.currentY);
       return c.filter((Z) => {
-        const ie = Z.$x, fe = Z.$x + Z.$w, Ie = Pe.get(Z.id) ?? Z.$y, Ve = Ie + Z.$h;
-        return ie < Y && fe > A && Ie < W && Ve > V;
+        const ie = Z.$x, fe = Z.$x + Z.$w, Re = Pe.get(Z.id) ?? Z.$y, Ve = Re + Z.$h;
+        return ie < Y && fe > A && Re < W && Ve > V;
       });
     },
     [c, Pe]
@@ -7888,7 +7889,7 @@ function ld(t) {
         const Y = A.getBoundingClientRect(), V = v.clientX - Y.left, W = v.clientY - Y.top;
         if (i) {
           const ie = $s(V, m);
-          ie && (me.current = ie, Re(ie));
+          ie && (me.current = ie, Ie(ie));
         }
         const Z = {
           startX: V,
@@ -8000,8 +8001,8 @@ function ld(t) {
     } else if (se) {
       const { id: C, mode: A, dx: Y, l: V, w: W, start: Z, segment: ie, index: fe } = se;
       if (he(null), Z) {
-        const ye = Math.round(Y / M);
-        if (!ye)
+        const xe = Math.round(Y / M);
+        if (!xe)
           l.exec("drag-task", {
             id: C,
             width: W,
@@ -8010,12 +8011,12 @@ function ld(t) {
             ...ie && { segmentIndex: fe }
           });
         else {
-          let Ie = {}, Ve = l.getTask(C);
+          let Re = {}, Ve = l.getTask(C);
           ie && (Ve = Ve.segments[fe]);
-          const Ue = 1440 * 60 * 1e3, Fe = ye * (z === "week" ? 7 : z === "month" ? 30 : z === "quarter" ? 91 : z === "year" ? 365 : 1) * Ue;
-          A === "move" ? (Ie.start = new Date(Ve.start.getTime() + Fe), Ie.end = new Date(Ve.end.getTime() + Fe)) : A === "start" ? (Ie.start = new Date(Ve.start.getTime() + Fe), Ie.end = Ve.end) : A === "end" && (Ie.start = Ve.start, Ie.end = new Date(Ve.end.getTime() + Fe)), l.exec("update-task", {
+          const Ue = 1440 * 60 * 1e3, Fe = xe * (z === "week" ? 7 : z === "month" ? 30 : z === "quarter" ? 91 : z === "year" ? 365 : 1) * Ue;
+          A === "move" ? (Re.start = new Date(Ve.start.getTime() + Fe), Re.end = new Date(Ve.end.getTime() + Fe)) : A === "start" ? (Re.start = new Date(Ve.start.getTime() + Fe), Re.end = Ve.end) : A === "end" && (Re.start = Ve.start, Re.end = new Date(Ve.end.getTime() + Fe)), l.exec("update-task", {
             id: C,
-            task: Ie,
+            task: Re,
             ...ie && { segmentIndex: fe }
           });
         }
@@ -8028,7 +8029,7 @@ function ld(t) {
       const { clientX: A, clientY: Y } = C, V = Se.current;
       if (V) {
         const W = V.getBoundingClientRect();
-        xe.current = A - W.left;
+        ye.current = A - W.left;
       }
       if (ve) {
         if (!V) return;
@@ -8041,8 +8042,8 @@ function ld(t) {
           const W = Se.current;
           if (!W) return;
           const Z = W.getBoundingClientRect(), ie = A - Z.left, fe = Y - Z.top;
-          q((ye) => ({
-            ...ye,
+          q((xe) => ({
+            ...xe,
             currentX: ie,
             currentY: fe
           })), j.current && (j.current.currentX = ie, j.current.currentY = fe);
@@ -8062,25 +8063,25 @@ function ld(t) {
           return;
         }
         if (Q.current) {
-          const { node: W, x: Z, id: ie } = Q.current, fe = Q.current.dx = A - Z, ye = Math.round(fe / W.offsetWidth * 100);
-          let Ie = Q.current.progress + ye;
-          Q.current.value = Ie = Math.min(
-            Math.max(0, Ie),
+          const { node: W, x: Z, id: ie } = Q.current, fe = Q.current.dx = A - Z, xe = Math.round(fe / W.offsetWidth * 100);
+          let Re = Q.current.progress + xe;
+          Q.current.value = Re = Math.min(
+            Math.max(0, Re),
             100
           ), l.exec("update-task", {
             id: ie,
-            task: { progress: Ie },
+            task: { progress: Re },
             inProgress: !0
           });
         } else if (se) {
           ue(null);
-          const { mode: W, l: Z, w: ie, x: fe, id: ye, start: Ie, segment: Ve, index: Ue } = se, qe = l.getTask(ye), Fe = A - fe;
-          if (!Ie && Math.abs(Fe) < 20 || W === "start" && ie - Fe < M || W === "end" && ie + Fe < M || W === "move" && (Fe < 0 && Z + Fe < 0 || Fe > 0 && Z + ie + Fe > ge) || se.segment)
+          const { mode: W, l: Z, w: ie, x: fe, id: xe, start: Re, segment: Ve, index: Ue } = se, qe = l.getTask(xe), Fe = A - fe;
+          if (!Re && Math.abs(Fe) < 20 || W === "start" && ie - Fe < M || W === "end" && ie + Fe < M || W === "move" && (Fe < 0 && Z + Fe < 0 || Fe > 0 && Z + ie + Fe > ge) || se.segment)
             return;
           const tt = { ...se, dx: Fe };
           let nt, yt;
           if (W === "start" ? (nt = Z + Fe, yt = ie - Fe) : W === "end" ? (nt = Z, yt = ie + Fe) : W === "move" && (nt = Z + Fe, yt = ie), l.exec("drag-task", {
-            id: ye,
+            id: xe,
             width: yt,
             left: nt,
             inProgress: !0,
@@ -8093,8 +8094,8 @@ function ld(t) {
         } else {
           const W = Ke(v);
           if (W) {
-            const Z = l.getTask(kt(W)), fe = Ke(v, "data-segment") || W, ye = He(fe, C, Z);
-            fe.style.cursor = ye && !e ? "col-resize" : "pointer";
+            const Z = l.getTask(kt(W)), fe = Ke(v, "data-segment") || W, xe = He(fe, C, Z);
+            fe.style.cursor = xe && !e ? "col-resize" : "pointer";
           }
         }
       }
@@ -8157,13 +8158,13 @@ function ld(t) {
     const Y = 864e5, V = l.getHistory();
     V?.startBatch();
     const W = new Date(v), Z = W.getDay(), ie = Z === 0 ? -6 : 1 - Z;
-    W.setDate(W.getDate() + ie), W.setHours(0, 0, 0, 0), C.forEach((fe, ye) => {
-      const Ie = `task-${Date.now()}-${ye}`, Ve = id(W, fe._startCellOffset || 0, m), Ue = new Date(Ve.getTime() + (fe._startDayOfWeek || 0) * Y);
+    W.setDate(W.getDate() + ie), W.setHours(0, 0, 0, 0), C.forEach((fe, xe) => {
+      const Re = `task-${Date.now()}-${xe}`, Ve = id(W, fe._startCellOffset || 0, m), Ue = new Date(Ve.getTime() + (fe._startDayOfWeek || 0) * Y);
       Ue.setHours(0, 0, 0, 0);
       const qe = new Date(Ue.getTime() + (fe._durationDays || 7) * Y);
       qe.setHours(0, 0, 0, 0), console.log("[paste] task:", fe.text, "newStart:", Ue, "newEnd:", qe, "_durationDays:", fe._durationDays, "_startDayOfWeek:", fe._startDayOfWeek), l.exec("add-task", {
         task: {
-          id: Ie,
+          id: Re,
           text: fe.text,
           start: Ue,
           end: qe,
@@ -8173,7 +8174,7 @@ function ld(t) {
         },
         target: A,
         mode: "child",
-        skipUndo: ye > 0
+        skipUndo: xe > 0
       });
     }), V?.endBatch();
   }, [l, m]), Pn = R(
@@ -8282,9 +8283,9 @@ function ld(t) {
     const C = 864e5, A = v.map((ie) => {
       const fe = l.getTask(ie.id);
       if (!fe) return null;
-      const ye = c.find((Go) => Go.id === ie.id);
-      if (!ye) return null;
-      const { $x: Ie, $y: Ve, $h: Ue, $w: qe, $skip: Fe, $level: tt, $index: nt, $y_base: yt, $x_base: un, $w_base: zn, $h_base: Gd, $skip_baseline: Bd, $critical: Kd, $reorder: jd, ...Vo } = ye, Ir = ye.end && ye.start ? Math.round((ye.end.getTime() - ye.start.getTime()) / C) : 0, Ar = ye.start ? (ye.start.getDay() + 6) % 7 : 0;
+      const xe = c.find((Go) => Go.id === ie.id);
+      if (!xe) return null;
+      const { $x: Re, $y: Ve, $h: Ue, $w: qe, $skip: Fe, $level: tt, $index: nt, $y_base: yt, $x_base: un, $w_base: zn, $h_base: Gd, $skip_baseline: Bd, $critical: Kd, $reorder: jd, ...Vo } = xe, Ir = xe.end && xe.start ? Math.round((xe.end.getTime() - xe.start.getTime()) / C) : 0, Ar = xe.start ? (xe.start.getDay() + 6) % 7 : 0;
       return console.log("[copy] task:", fe.text, "durationDays:", Ir, "startDayOfWeek:", Ar, "$w:", qe), { ...Vo, _durationDays: Ir, _startDayOfWeek: Ar, _originalWidth: qe, _originalHeight: Ue };
     }).filter(Boolean);
     if (!A.length) return;
@@ -8304,7 +8305,7 @@ function ld(t) {
         tasks: Un,
         baseDate: qn,
         parent: Ss,
-        currentX: xe.current
+        currentX: ye.current
         // Show ghosts at current mouse position
       }), !1;
   }) : void 0, [i, l, dn]), G(() => {
@@ -8491,8 +8492,8 @@ function fd(t) {
       const oe = l.taskRows.get(ee.id) ?? ee.id;
       j.has(oe) || (j.set(oe, le.length), le.push(oe));
     }), E.forEach((ee) => {
-      const oe = l.taskRows.get(ee.id) ?? ee.id, Re = j.get(oe) ?? 0;
-      q.set(ee.id, Re * y);
+      const oe = l.taskRows.get(ee.id) ?? ee.id, Ie = j.get(oe) ?? 0;
+      q.set(ee.id, Ie * y);
     }), q;
   }, [E, a, l, y]), se = $(() => {
     const q = [];
@@ -8518,10 +8519,10 @@ function fd(t) {
     le.left = j.scrollLeft, m.exec("scroll-chart", le);
   }
   function be() {
-    const q = M.current, le = Math.ceil((O || 0) / (y || 1)) + 1, ee = Math.floor((q && q.scrollTop || 0) / (y || 1)), oe = Math.max(0, ee - N), Re = ee + le + N, ve = oe * (y || 0);
+    const q = M.current, le = Math.ceil((O || 0) / (y || 1)) + 1, ee = Math.floor((q && q.scrollTop || 0) / (y || 1)), oe = Math.max(0, ee - N), Ie = ee + le + N, ve = oe * (y || 0);
     m.exec("render-data", {
       start: oe,
-      end: Re,
+      end: Ie,
       from: ve
     });
   }
@@ -8535,12 +8536,12 @@ function fd(t) {
       if (le.toString().indexOf("x") < 0) return;
       const ee = M.current;
       if (!ee) return;
-      const { clientWidth: oe } = ee, Re = m.getTask(j);
-      if (Re.$x + Re.$w < ee.scrollLeft)
-        m.exec("scroll-chart", { left: Re.$x - (b || 0) }), ee.scrollLeft = Re.$x - (b || 0);
-      else if (Re.$x >= oe + ee.scrollLeft) {
-        const ve = oe < Re.$w ? b || 0 : Re.$w;
-        m.exec("scroll-chart", { left: Re.$x - oe + ve }), ee.scrollLeft = Re.$x - oe + ve;
+      const { clientWidth: oe } = ee, Ie = m.getTask(j);
+      if (Ie.$x + Ie.$w < ee.scrollLeft)
+        m.exec("scroll-chart", { left: Ie.$x - (b || 0) }), ee.scrollLeft = Ie.$x - (b || 0);
+      else if (Ie.$x >= oe + ee.scrollLeft) {
+        const ve = oe < Ie.$w ? b || 0 : Ie.$w;
+        m.exec("scroll-chart", { left: Ie.$x - oe + ve }), ee.scrollLeft = Ie.$x - oe + ve;
       }
     },
     [m, b]
@@ -8614,22 +8615,22 @@ function fd(t) {
     if (!u || H.current || !k || !M.current || !O) return;
     const q = M.current, { clientWidth: j } = q, le = /* @__PURE__ */ new Date(), ee = k.rows[k.rows.length - 1]?.cells;
     if (!ee) return;
-    let oe = -1, Re = 0;
+    let oe = -1, Ie = 0;
     const ve = [];
     for (let me = 0; me < ee.length; me++) {
-      const xe = ee[me];
-      ve.push({ left: Re, width: xe.width });
-      const Se = xe.date;
-      if (xe.unit === "week") {
+      const ye = ee[me];
+      ve.push({ left: Ie, width: ye.width });
+      const Se = ye.date;
+      if (ye.unit === "week") {
         const U = new Date(Se);
         U.setDate(U.getDate() + 7), le >= Se && le < U && (oe = me);
-      } else xe.unit === "day" && le.getFullYear() === Se.getFullYear() && le.getMonth() === Se.getMonth() && le.getDate() === Se.getDate() && (oe = me);
-      Re += xe.width;
+      } else ye.unit === "day" && le.getFullYear() === Se.getFullYear() && le.getMonth() === Se.getMonth() && le.getDate() === Se.getDate() && (oe = me);
+      Ie += ye.width;
     }
     let X = oe;
     if (oe > 0 && (X = oe - 1), X >= 0 && ve[X]) {
-      const me = ve[X], xe = Math.max(0, me.left);
-      q.scrollLeft = xe, m.exec("scroll-chart", { left: xe }), H.current = !0;
+      const me = ve[X], ye = Math.max(0, me.left);
+      q.scrollLeft = ye, m.exec("scroll-chart", { left: ye }), H.current = !0;
     }
   }, [u, k, O, m]), ud("chart"), /* @__PURE__ */ J(
     "div",
@@ -8856,9 +8857,9 @@ function pd(t) {
   } = t, g = Ce(wt), m = re(g, "_tasks"), f = re(g, "_scales"), x = re(g, "cellHeight"), w = re(g, "columns"), y = re(g, "_scrollTask"), b = re(g, "undo"), k = $(() => {
     if (!i) return a;
     const X = /* @__PURE__ */ new Map(), me = /* @__PURE__ */ new Map();
-    return m.forEach((xe) => {
-      const Se = xe.row ?? xe.id;
-      me.set(xe.id, Se), X.has(Se) || X.set(Se, []), X.get(Se).push(xe.id);
+    return m.forEach((ye) => {
+      const Se = ye.row ?? ye.id;
+      me.set(ye.id, Se), X.has(Se) || X.set(Se, []), X.get(Se).push(ye.id);
     }), { rowMap: X, taskRows: me };
   }, [m, i, a]), [D, S] = K(!1);
   let [_, E] = K(0);
@@ -8876,7 +8877,7 @@ function pd(t) {
   }, [Q]);
   const ce = $(() => {
     let X;
-    return w.every((me) => me.width && !me.flexgrow) ? X = w.reduce((me, xe) => me + parseInt(xe.width), 0) : D && B === "chart" ? X = parseInt(w.find((me) => me.id === "action")?.width) || 50 : X = 440, _ = X, X;
+    return w.every((me) => me.width && !me.flexgrow) ? X = w.reduce((me, ye) => me + parseInt(ye.width), 0) : D && B === "chart" ? X = parseInt(w.find((me) => me.id === "action")?.width) || 50 : X = 440, _ = X, X;
   }, [w, D, B]);
   G(() => {
     E(ce);
@@ -8889,8 +8890,8 @@ function pd(t) {
       return m.length * x;
     const X = /* @__PURE__ */ new Set();
     return m.forEach((me) => {
-      const xe = k.taskRows.get(me.id) ?? me.id;
-      X.add(xe);
+      const ye = k.taskRows.get(me.id) ?? me.id;
+      X.add(ye);
     }), X.size * x;
   }, [m, x, i, k]), we = $(
     () => f.height + ae + be,
@@ -8942,7 +8943,7 @@ function pd(t) {
       if (!X) return;
       const {
         rTasks: me,
-        rScales: xe,
+        rScales: ye,
         rCellHeight: Se,
         scrollSize: U,
         ganttDiv: ke,
@@ -8951,7 +8952,7 @@ function pd(t) {
       if (!ke) return;
       const { id: pe } = X, He = me.findIndex(($e) => $e.id === pe);
       if (He > -1) {
-        const $e = Te - xe.height, Pe = He * Se, Ne = ke.scrollTop;
+        const $e = Te - ye.height, Pe = He * Se, Ne = ke.scrollTop;
         let Le = null;
         Pe < Ne ? Le = Pe : Pe + Se > Ne + $e && (Le = Pe - $e + Se + U), Le !== null && (g.exec("scroll-chart", { top: Math.max(Le, 0) }), q.current.scrollTop = Math.max(Le, 0));
       }
@@ -8963,17 +8964,17 @@ function pd(t) {
   }, [y]), G(() => {
     const X = q.current, me = j.current;
     if (!X || !me) return;
-    const xe = () => {
+    const ye = () => {
       Uo(() => {
         z(X.offsetHeight), T(X.offsetWidth), N(me.offsetWidth);
       });
-    }, Se = new ResizeObserver(xe);
+    }, Se = new ResizeObserver(ye);
     return Se.observe(X), () => Se.disconnect();
   }, [q.current]);
-  const Re = F(null), ve = F(null);
+  const Ie = F(null), ve = F(null);
   return G(() => {
     ve.current && (ve.current.destroy(), ve.current = null);
-    const X = Re.current;
+    const X = Ie.current;
     if (X)
       return ve.current = Mr(X, {
         keys: {
@@ -8993,12 +8994,12 @@ function pd(t) {
         },
         exec: (me) => {
           if (me.isInput) return;
-          const xe = me.key;
-          if (xe === "ctrl+z" || xe === "meta+z") {
+          const ye = me.key;
+          if (ye === "ctrl+z" || ye === "meta+z") {
             g.exec("undo", {});
             return;
           }
-          if (xe === "ctrl+y" || xe === "meta+shift+z") {
+          if (ye === "ctrl+y" || ye === "meta+shift+z") {
             g.exec("redo", {});
             return;
           }
@@ -9021,7 +9022,7 @@ function pd(t) {
             height: M,
             width: H
           },
-          children: /* @__PURE__ */ J("div", { tabIndex: 0, className: "wx-jlbQoHOz wx-layout", ref: Re, children: [
+          children: /* @__PURE__ */ J("div", { tabIndex: 0, className: "wx-jlbQoHOz wx-layout", ref: Ie, children: [
             w.length ? /* @__PURE__ */ J(Ae, { children: [
               /* @__PURE__ */ p(
                 td,
@@ -9184,8 +9185,8 @@ const kd = (t) => t.split("-").map((e) => e ? e.charAt(0).toUpperCase() + e.slic
         m
       )
     }), $e;
-  }, [b, l, c, a, m, ee, le]), Re = F(null);
-  Re.current !== s && (lr(s, { durationUnit: g, calendar: H }), Re.current = s), G(() => {
+  }, [b, l, c, a, m, ee, le]), Ie = F(null);
+  Ie.current !== s && (lr(s, { durationUnit: g, calendar: H }), Ie.current = s), G(() => {
     lr(s, { durationUnit: g, calendar: H });
   }, [s, g, H, B]);
   const ve = $(() => {
@@ -9202,8 +9203,8 @@ const kd = (t) => t.split("-").map((e) => e ? e.charAt(0).toUpperCase() + e.slic
     const Ne = "on" + kd($e);
     _e.current && _e.current[Ne] && _e.current[Ne](Pe);
   }), X.setNext(me.current));
-  const [xe, Se] = K(null), U = F(null);
-  U.current = xe;
+  const [ye, Se] = K(null), U = F(null);
+  U.current = ye;
   const ke = $(
     () => ({
       getState: de.getState.bind(de),
@@ -10294,7 +10295,7 @@ function Wd({
       ke.id === "delete" && le(), ke.id === "save" && (Te.length ? ee() : j()), ke.comp && ee();
     },
     [t, S, l, j, le, ee]
-  ), Re = R(
+  ), Ie = R(
     (U, ke, Te) => (_ && U.type === "summary" && (U.unscheduled = !1), yo(U, t.getState(), ke), Te || he(!1), U),
     [_, t]
   ), ve = R(
@@ -10324,19 +10325,19 @@ function Wd({
   ), X = R(
     (U) => {
       let { update: ke, key: Te, input: pe } = U;
-      if (pe && he(!0), U.update = Re({ ...ke }, Te, pe), !l) ce(U.update);
+      if (pe && he(!0), U.update = Ie({ ...ke }, Te, pe), !l) ce(U.update);
       else if (!be && !pe) {
         const He = _e.find((Ne) => Ne.key === Te), $e = ke[Te];
         (!He.validation || He.validation($e)) && (!He.required || $e) && ve(U.update);
       }
     },
-    [l, Re, be, _e, ve]
+    [l, Ie, be, _e, ve]
   ), me = R(
     (U) => {
       l || ve(U.values);
     },
     [l, ve]
-  ), xe = R((U) => {
+  ), ye = R((U) => {
     P(U.errors);
   }, []), Se = $(
     () => H ? {
@@ -10364,7 +10365,7 @@ function Wd({
       focus: c,
       onAction: oe,
       onSave: me,
-      onValidation: xe,
+      onValidation: ye,
       onChange: X,
       hotkeys: d && { ...Se, ...d }
     }
