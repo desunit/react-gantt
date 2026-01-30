@@ -320,3 +320,11 @@
   z-index: 10;
   box-sizing: border-box;
 }
+
+/* Paste preview ghost tasks */
+.wx-paste-preview.wx-bar.wx-GKbcLEGA {
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 5;
+  border: 2px dashed var(--wx-color-primary, #2196f3);
+}

@@ -53,6 +53,17 @@ const addCells = (date, cells, scales) => {
   return new Date(date.getTime() + cells * msPerUnit);
 };
 
+// Date to pixel conversion helper
+const dateToPixel = (date, scales) => {
+  if (!scales || !scales.start || !date) return 0;
+  const { start, lengthUnitWidth, lengthUnit } = scales;
+  const msPerDay = 86400000;
+  const daysPerUnit = lengthUnit === 'week' ? 7 : lengthUnit === 'month' ? 30 : lengthUnit === 'quarter' ? 91 : lengthUnit === 'year' ? 365 : 1;
+  const msPerUnit = daysPerUnit * msPerDay;
+  const units = (date.getTime() - start.getTime()) / msPerUnit;
+  return units * lengthUnitWidth;
+};
+
 function Bars(props) {
   const {
     readonly,
@@ -153,6 +164,14 @@ function Bars(props) {
   const [bulkMove, setBulkMove] = useState(null);
   // Paste target position (for copy/paste feature)
   const [pasteTargetDate, setPasteTargetDate] = useState(null);
+  // Paste preview mode state
+  const [pastePreview, setPastePreview] = useState(null);
+  // Shape: { tasks: [], baseDate, parent, currentX }
+  // Ref for copy/paste handler to avoid stale closure
+  const pasteTargetDateRef = useRef(null);
+  pasteTargetDateRef.current = pasteTargetDate;
+  // Track last mouse X position in container (for paste preview initial position)
+  const lastMouseXRef = useRef(200);
 
   const containerRef = useRef(null);
 
@@ -255,6 +274,40 @@ function Bars(props) {
     return yMap;
   }, [rTasksValue, multiTaskRows, rowMapping, cellHeight]);
 
+  // Map rowId to Y position (for paste preview ghosts)
+  const rowYPositions = useMemo(() => {
+    const yMap = new Map();
+
+    if (!multiTaskRows || !rowMapping) {
+      // Without multiTaskRows, each task is its own row
+      rTasksValue.forEach((task) => {
+        yMap.set(task.id, task.$y);
+        if (task.row !== undefined) {
+          yMap.set(task.row, task.$y);
+        }
+      });
+      return yMap;
+    }
+
+    // Build rowIndex map
+    const rowIndexMap = new Map();
+    const seenRows = [];
+    rTasksValue.forEach((task) => {
+      const rowId = rowMapping.taskRows.get(task.id) ?? task.id;
+      if (!rowIndexMap.has(rowId)) {
+        rowIndexMap.set(rowId, seenRows.length);
+        seenRows.push(rowId);
+      }
+    });
+
+    // Map rowId to Y position
+    rowIndexMap.forEach((rowIndex, rowId) => {
+      yMap.set(rowId, rowIndex * cellHeight);
+    });
+
+    return yMap;
+  }, [rTasksValue, multiTaskRows, rowMapping, cellHeight]);
+
   // Get tasks intersecting with a rectangle
   // Marquee coordinates are already in content-space because getBoundingClientRect()
   // on a scrolled element returns position accounting for scroll offset
@@ -352,6 +405,10 @@ function Bars(props) {
     (e) => {
       if (e.button !== 0) return;
 
+      // Skip mousedown processing when in paste preview mode
+      // Let onClick handle the paste confirmation
+      if (pastePreview) return;
+
       const node = locate(e);
 
       // Marquee selection: click on empty space
@@ -359,19 +416,19 @@ function Bars(props) {
         const container = containerRef.current;
         if (!container) return;
         const rect = container.getBoundingClientRect();
-        // Use viewport-relative coordinates (no scroll offset added)
+
+        // Convert viewport coordinates to content-space coordinates
+        // The .wx-bars element spans the full content width, so its bounding rect
+        // already accounts for scroll - no need to add scrollLeft
         const startX = e.clientX - rect.left;
         const startY = e.clientY - rect.top;
 
         // Track click position for paste target (copyPaste feature)
-        // Need to add scroll offset to convert from viewport-space to content-space
+        // Update ref directly for immediate access (state update may not be ready before Ctrl+V)
         if (copyPaste) {
-          // Find the scroll container (parent .wx-chart element)
-          const scrollContainer = container.closest('.wx-chart') || container.parentElement;
-          const scrollLeft = scrollContainer ? scrollContainer.scrollLeft : 0;
-          const contentX = startX + scrollLeft;
-          const clickDate = pixelToDate(contentX, scalesValue);
+          const clickDate = pixelToDate(startX, scalesValue);
           if (clickDate) {
+            pasteTargetDateRef.current = clickDate; // Direct ref update for immediate access
             setPasteTargetDate(clickDate);
           }
         }
@@ -437,7 +494,7 @@ function Bars(props) {
 
       down(node, e);
     },
-    [down, marqueeSelect, copyPaste, readonly, selectedValue, isTaskSelected, api, getMoveMode, schedule, startDrag, scalesValue],
+    [down, marqueeSelect, copyPaste, readonly, selectedValue, isTaskSelected, api, getMoveMode, schedule, startDrag, scalesValue, pastePreview],
   );
 
   const touchstart = useCallback(
@@ -473,22 +530,19 @@ function Bars(props) {
           api.exec('select-task', { id: task.id, toggle: true, marquee: true });
         });
       } else {
-        // Replace selection: clear and select all intersecting
-        // Only clear if we have tasks to select (don't clear on empty click)
-        if (intersecting.length > 0) {
-          // First clear selection
-          if (selectedValue.length > 0) {
-            api.exec('select-task', { id: null, marquee: true });
-          }
-          // Then select all intersecting tasks
-          intersecting.forEach((task, index) => {
-            api.exec('select-task', {
-              id: task.id,
-              toggle: index > 0, // First one replaces, rest toggle (add)
-              marquee: true,
-            });
-          });
+        // Replace selection: clear first, then select intersecting
+        // First clear any existing selection
+        if (selectedValue.length > 0) {
+          api.exec('select-task', { id: null, marquee: true });
         }
+        // Then select all intersecting tasks
+        intersecting.forEach((task, index) => {
+          api.exec('select-task', {
+            id: task.id,
+            toggle: index > 0, // First one replaces, rest toggle (add)
+            marquee: true,
+          });
+        });
       }
 
       setMarquee(null);
@@ -600,13 +654,30 @@ function Bars(props) {
     (e, point) => {
       const { clientX, clientY } = point;
 
+      // Always track mouse X position for paste preview initial position
+      const container = containerRef.current;
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        lastMouseXRef.current = clientX - rect.left;
+      }
+
+      // Handle paste preview mode - ghosts follow cursor
+      if (pastePreview) {
+        if (!container) return;
+        const rect = container.getBoundingClientRect();
+        const currentX = clientX - rect.left;
+        setPastePreview(prev => ({ ...prev, currentX }));
+        return; // Don't process other interactions
+      }
+
       if (!readonly) {
         // Handle marquee selection drag
         if (marquee) {
           const container = containerRef.current;
           if (!container) return;
           const rect = container.getBoundingClientRect();
-          // Use viewport-relative coordinates (no scroll offset added)
+
+          // Convert to content-space coordinates (consistent with task.$x)
           const currentX = clientX - rect.left;
           const currentY = clientY - rect.top;
 
@@ -730,6 +801,7 @@ function Bars(props) {
       up,
       marquee,
       bulkMove,
+      pastePreview,
     ],
   );
 
@@ -818,10 +890,55 @@ function Bars(props) {
     }
   }, [linkFrom]);
 
+  // Execute paste - creates new tasks at target position
+  // Tasks are pasted within the same parent, each task keeps its original row
+  const executePaste = useCallback((targetDate, tasks, parent) => {
+    if (!tasks.length || !targetDate) return;
+    // Note: parent can be 0 (root level), so check for undefined/null specifically
+    if (parent === undefined || parent === null) return;
+
+    const history = api.getHistory();
+    history?.startBatch();
+
+    tasks.forEach((task, i) => {
+      const newId = `task-${Date.now()}-${i}`;
+      // Use cell offsets to preserve alignment
+      const newStart = addCells(targetDate, task._startCellOffset || 0, scalesValue);
+      const newEnd = addCells(newStart, task._durationCells || 0, scalesValue);
+
+      api.exec('add-task', {
+        task: {
+          ...task,
+          id: newId,
+          start: newStart,
+          end: newEnd,
+          // Keep original parent and row from copied task
+          parent: parent,
+          row: task.row, // Each task keeps its own row
+        },
+        target: parent,
+        mode: 'child',
+        skipUndo: i > 0,
+      });
+    });
+
+    history?.endBatch();
+  }, [api, scalesValue]);
+
   const onClick = useCallback(
     (e) => {
       if (ignoreNextClickRef.current) {
         ignoreNextClickRef.current = false;
+        return;
+      }
+
+      // Handle paste preview confirm
+      if (pastePreview && pastePreview.currentX != null) {
+        const targetDate = pixelToDate(pastePreview.currentX, scalesValue);
+        if (targetDate) {
+          executePaste(targetDate, pastePreview.tasks, pastePreview.parent);
+        }
+        setPastePreview(null);
         return;
       }
 
@@ -869,6 +986,9 @@ function Bars(props) {
       alreadyLinked,
       getLinkType,
       removeLinkMarker,
+      pastePreview,
+      scalesValue,
+      executePaste,
     ],
   );
 
@@ -952,22 +1072,19 @@ function Bars(props) {
     [schedule, tree, linkFrom],
   );
 
-  // Refs for copy/paste handlers to avoid re-registering intercept
-  const pasteTargetDateRef = useRef(null);
-  pasteTargetDateRef.current = pasteTargetDate;
-
   // Copy handler - stores selected tasks in module-level clipboard
   // Only allows copying tasks from the same parent (company), but different rows are OK
   const handleCopy = useCallback(() => {
     const selected = api.getState()._selected;
     if (!selected || !selected.length) return;
 
-    // Get all selected tasks
+    // Get all selected tasks (preserve $w for preview rendering)
     const tasks = selected.map((sel) => {
       const task = api.getTask(sel.id);
       if (!task) return null;
-      const { $x, $y, $w, $h, $skip, $level, $index, $y_base, $x_base, $w_base, $h_base, $skip_baseline, $critical, $reorder, ...clean } = task;
-      return clean;
+      const { $x, $y, $h, $skip, $level, $index, $y_base, $x_base, $w_base, $h_base, $skip_baseline, $critical, $reorder, ...clean } = task;
+      // Keep $w for accurate ghost width rendering
+      return { ...clean, _originalWidth: task.$w };
     }).filter(Boolean);
 
     if (!tasks.length) return;
@@ -997,42 +1114,6 @@ function Bars(props) {
     clipboardBaseDate = baseDate;
   }, [api, scalesValue]);
 
-  // Paste handler - creates new tasks at paste target position
-  // Tasks are pasted within the same parent, each task keeps its original row
-  const handlePaste = useCallback(() => {
-    const targetDate = pasteTargetDateRef.current;
-    if (!clipboardTasks.length || !targetDate || !clipboardBaseDate) return;
-    // Note: clipboardParent can be 0 (root level), so check for undefined/null specifically
-    if (clipboardParent === undefined || clipboardParent === null) return;
-
-    const history = api.getHistory();
-    history?.startBatch();
-
-    clipboardTasks.forEach((task, i) => {
-      const newId = `task-${Date.now()}-${i}`;
-      // Use cell offsets to preserve alignment
-      const newStart = addCells(targetDate, task._startCellOffset || 0, scalesValue);
-      const newEnd = addCells(newStart, task._durationCells || 0, scalesValue);
-
-      api.exec('add-task', {
-        task: {
-          ...task,
-          id: newId,
-          start: newStart,
-          end: newEnd,
-          // Keep original parent and row from copied task
-          parent: clipboardParent,
-          row: task.row, // Each task keeps its own row
-        },
-        target: clipboardParent,
-        mode: 'child',
-        skipUndo: i > 0,
-      });
-    });
-
-    history?.endBatch();
-  }, [api]);
-
   // Hotkey intercept for copy/paste
   useEffect(() => {
     if (!copyPaste) return;
@@ -1043,12 +1124,36 @@ function Bars(props) {
         return false;
       }
       if (ev.key === 'ctrl+v' || ev.key === 'meta+v') {
-        handlePaste();
+        // Enter paste preview mode instead of immediate paste
+        if (!clipboardTasks.length || !clipboardBaseDate) return false;
+        // Use last tracked mouse position for immediate ghost display
+        setPastePreview({
+          tasks: clipboardTasks,
+          baseDate: clipboardBaseDate,
+          parent: clipboardParent,
+          currentX: lastMouseXRef.current, // Show ghosts at current mouse position
+        });
         return false;
       }
     });
     return unsub;
-  }, [copyPaste, api, handleCopy, handlePaste]);
+  }, [copyPaste, api, handleCopy]);
+
+  // Escape key to cancel paste preview (separate listener for reliability)
+  useEffect(() => {
+    if (!pastePreview) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        setPastePreview(null);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
+  }, [pastePreview]);
 
   // Compute marquee rectangle style
   const marqueeStyle = useMemo(() => {
@@ -1216,6 +1321,27 @@ function Bars(props) {
       })}
       {marquee && marqueeStyle && (
         <div className="wx-GKbcLEGA wx-marquee-selection" style={marqueeStyle} />
+      )}
+      {pastePreview && pastePreview.currentX != null && (
+        pastePreview.tasks.map((task, i) => {
+          const targetDate = pixelToDate(pastePreview.currentX, scalesValue);
+          if (!targetDate) return null;
+          const newStart = addCells(targetDate, task._startCellOffset || 0, scalesValue);
+          const newEnd = addCells(newStart, task._durationCells || 0, scalesValue);
+          const x = dateToPixel(newStart, scalesValue);
+          const w = dateToPixel(newEnd, scalesValue) - x;
+          // Find row Y position using rowYPositions map or fallback
+          const rowY = rowYPositions.get(task.row) ?? (task.$y || 0);
+          return (
+            <div
+              key={`preview-${i}`}
+              className="wx-GKbcLEGA wx-bar wx-task wx-paste-preview"
+              style={{ left: x, top: rowY, width: w, height: cellHeight }}
+            >
+              <div className="wx-GKbcLEGA wx-content">{task.text}</div>
+            </div>
+          );
+        })
       )}
     </div>
   );

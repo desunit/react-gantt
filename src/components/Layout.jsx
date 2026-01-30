@@ -277,7 +277,21 @@ function Layout(props) {
         'meta+shift+z': undo,
       },
       exec: (ev) => {
-        if (!ev.isInput) api.exec('hotkey', ev);
+        if (ev.isInput) return;
+
+        // Handle undo/redo keys directly via api.exec
+        // The gantt-store uses exec('undo', {}) for undo
+        const key = ev.key;
+        if (key === 'ctrl+z' || key === 'meta+z') {
+          api.exec('undo', {});
+          return;
+        }
+        if (key === 'ctrl+y' || key === 'meta+shift+z') {
+          api.exec('redo', {});
+          return;
+        }
+
+        api.exec('hotkey', ev);
       },
     });
 

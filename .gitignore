@@ -23,3 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 yarn.log
+test-results/*
+playwright-report
+playwright-report/*

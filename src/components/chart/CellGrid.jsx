@@ -28,6 +28,7 @@ function CellGrid({ borders = '' }) {
         ? `url(${grid(cellWidth, cellHeight, color, borders)})`
         : undefined,
     position: 'absolute',
+    pointerEvents: 'none',
   };
 
   return <div ref={nodeRef} style={style} />;
