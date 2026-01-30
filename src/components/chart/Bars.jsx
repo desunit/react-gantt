@@ -249,10 +249,8 @@ function Bars(props) {
 
     // Only check for overlaps if allowTaskIntersection is false and multiTaskRows is enabled
     if (allowTaskIntersection || !multiTaskRows || !rowMapping) {
-      console.log('[collision] skipping - allowTaskIntersection:', allowTaskIntersection, 'multiTaskRows:', multiTaskRows, 'rowMapping:', !!rowMapping);
       return overlapping;
     }
-    console.log('[collision] checking overlaps...');
 
     // Group tasks by row
     const tasksByRow = new Map();
@@ -283,7 +281,6 @@ function Bars(props) {
           const right2 = task2.$x + task2.$w;
 
           if (boundsOverlap(left1, right1, left2, right2)) {
-            console.log('[collision] found overlap:', task1.id, task2.id, 'bounds:', left1, right1, left2, right2);
             overlapping.add(task1.id);
             overlapping.add(task2.id);
           }
@@ -291,7 +288,6 @@ function Bars(props) {
       }
     });
 
-    console.log('[collision] total overlapping tasks:', overlapping.size);
     return overlapping;
   }, [allowTaskIntersection, multiTaskRows, rowMapping, rTasksValue, rTasksCounter]);
 
