@@ -392,26 +392,28 @@ const [pastePreview, setPastePreview] = useState(null);
 // Shape: { tasks: [], baseDate, parent, currentX }
 ```
 
-**Copy handler stores:**
+**Copy handler stores (all dates already UTC):**
 
 - `_startCellOffset`: `getCellOffset(task.start, baseDate, scales)` - weeks from earliest task
-- `_startDayOfWeek`: `(task.start.getDay() + 6) % 7` - converts JS Sun=0 to Mon=0
+- `_startDayOfWeek`: `(task.start.getUTCDay() + 6) % 7` - converts JS Sun=0 to Mon=0 (UTC)
 - `_durationDays`: `Math.round((end - start) / msPerDay)` - exact days
 
-**Paste execution:**
+**Paste execution (all UTC):**
 
 ```js
-// Snap target to Monday
+// Snap target to Monday (UTC)
 const targetWeekStart = new Date(targetDate);
-const dow = targetWeekStart.getDay();
+const dow = targetWeekStart.getUTCDay();
 const daysToMonday = dow === 0 ? -6 : 1 - dow;
-targetWeekStart.setDate(targetWeekStart.getDate() + daysToMonday);
+targetWeekStart.setUTCDate(targetWeekStart.getUTCDate() + daysToMonday);
+targetWeekStart.setUTCHours(0, 0, 0, 0);
 
 // Calculate new dates
 const weekOffset = addCells(targetWeekStart, task._startCellOffset, scales);
 const newStart = new Date(
   weekOffset.getTime() + task._startDayOfWeek * msPerDay,
 );
+newStart.setUTCHours(0, 0, 0, 0);
 const newEnd = new Date(newStart.getTime() + task._durationDays * msPerDay);
 ```
 
@@ -425,23 +427,29 @@ const w = task._originalWidth;
 const h = task._originalHeight;
 ```
 
-### Helper Functions
+### Helper Functions (all operate on UTC dates)
 
 ```js
-// Pixel to date (snaps to cell start)
+// Pixel to date (snaps to cell start) - scales.start is already UTC
 const pixelToDate = (px, scales) => {
   const units = Math.floor(px / scales.lengthUnitWidth);
-  return new Date(scales.start.getTime() + units * daysPerUnit * msPerDay);
+  const date = new Date(
+    scales.start.getTime() + units * daysPerUnit * msPerDay,
+  );
+  date.setUTCHours(0, 0, 0, 0);
+  return date;
 };
 
 // Cell offset between dates (in whole cells)
 const getCellOffset = (date, baseDate, scales) => {
-  return Math.round((date - baseDate) / msPerUnit);
+  return Math.round((date.getTime() - baseDate.getTime()) / msPerUnit);
 };
 
-// Add cells to date
+// Add cells to date (returns UTC midnight)
 const addCells = (date, cells, scales) => {
-  return new Date(date.getTime() + cells * msPerUnit);
+  const result = new Date(date.getTime() + cells * msPerUnit);
+  result.setUTCHours(0, 0, 0, 0);
+  return result;
 };
 ```
 
@@ -579,11 +587,15 @@ This shadows the imported type with extended version.
 
 ## UTC Date Handling
 
-**All date operations use UTC** to ignore timezones and ensure consistent behavior across different user locations.
+**All dates are UTC** - no timezone conversions inside the library. The consumer (e.g., operations-ui) is responsible for passing UTC dates.
 
-### Key Changes
+### Simple Rule
 
-All JavaScript Date methods use UTC variants:
+1. **All dates passed to Gantt must be UTC** (created with `Date.UTC()`)
+2. **All dates from Gantt events are UTC** (no conversion needed)
+3. **No `localToUTC` or timezone conversions inside Bars.jsx**
+
+### UTC Methods Used
 
 | Local Method    | UTC Method         |
 | --------------- | ------------------ |
@@ -591,23 +603,45 @@ All JavaScript Date methods use UTC variants:
 | `getDate()`     | `getUTCDate()`     |
 | `getMonth()`    | `getUTCMonth()`    |
 | `getFullYear()` | `getUTCFullYear()` |
-| `getHours()`    | `getUTCHours()`    |
 | `setDate()`     | `setUTCDate()`     |
 | `setHours()`    | `setUTCHours()`    |
 
-### Files Modified for UTC
-
-- **Bars.jsx** - `pixelToDate()`, `addCells()`, copy-paste handlers
-- **Chart.jsx** - Current week detection for scroll-to-current-week
-- **Gantt.jsx** - `isCurrentWeek()` calculation for week highlighting
-- **DateTimePicker.jsx** - Preserves time when changing date
-
-### Creating UTC Dates
+### Key Functions (Bars.jsx)
 
 ```js
-// Create UTC midnight
-const date = new Date(Date.UTC(year, month, day));
+// Pixel to date - uses scales.start directly (already UTC)
+const pixelToDate = (px, scales) => {
+  const units = Math.floor(px / scales.lengthUnitWidth);
+  const date = new Date(
+    scales.start.getTime() + units * daysPerUnit * msPerDay,
+  );
+  date.setUTCHours(0, 0, 0, 0);
+  return date;
+};
 
-// Normalize existing date to UTC midnight
-date.setUTCHours(0, 0, 0, 0);
+// Copy handler - dates are already UTC, no conversion
+const startDayOfWeek = task.start
+  ? (task.start.getUTCDay() + 6) % 7 // Mon=0, Sun=6
+  : 0;
 ```
+
+### Consumer Responsibility
+
+The consumer (operations-ui) handles boundary conversions:
+
+```js
+// DatePicker returns local → convert to UTC immediately
+const handleDateChange = (ev) => {
+  const utcDate = localToUTC(ev.value);
+  setDate(utcDate);
+};
+
+// Pass UTC dates to Gantt
+<Gantt start={utcStartDate} tasks={tasksWithUtcDates} />;
+```
+
+### Files Using UTC
+
+- **Bars.jsx** - `pixelToDate()`, `addCells()`, `executePaste()`, copy handler
+- **Chart.jsx** - Current week detection for scroll-to-current-week
+- **Gantt.jsx** - `isCurrentWeek()` calculation for week highlighting
