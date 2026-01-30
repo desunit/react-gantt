@@ -22,23 +22,17 @@ let clipboardTasks = [];
 let clipboardBaseDate = null;
 let clipboardParent = null;
 
-// Convert local date to UTC date (same calendar day)
-const localToUTC = (date) => {
-  return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-};
-
 // Pixel to date conversion helper - snaps to cell start (beginning of week/day/etc)
-// All date operations use UTC to ignore timezones
+// All dates are expected to be UTC - no timezone conversion needed
 const pixelToDate = (px, scales) => {
   if (!scales || !scales.start) return null;
   const { start, lengthUnitWidth, lengthUnit } = scales;
   const msPerDay = 86400000;
   const daysPerUnit = lengthUnit === 'week' ? 7 : lengthUnit === 'month' ? 30 : lengthUnit === 'quarter' ? 91 : lengthUnit === 'year' ? 365 : 1;
-  // Floor to snap to the beginning of the cell
   const units = Math.floor(px / lengthUnitWidth);
-  // Convert start to UTC first (it might be at local midnight)
-  const startUTC = localToUTC(start);
-  const date = new Date(startUTC.getTime() + units * daysPerUnit * msPerDay);
+  // start is already UTC - just add the offset
+  const date = new Date(start.getTime() + units * daysPerUnit * msPerDay);
+  date.setUTCHours(0, 0, 0, 0);
   return date;
 };
 
@@ -1150,6 +1144,7 @@ function Bars(props) {
 
   // Copy handler - stores selected tasks in module-level clipboard
   // Only allows copying tasks from the same parent (company), but different rows are OK
+  // All dates are expected to be UTC - no conversion needed
   const handleCopy = useCallback(() => {
     const selected = api.getState()._selected;
     if (!selected || !selected.length) return;
@@ -1169,10 +1164,9 @@ function Bars(props) {
         ? Math.round((renderedTask.end.getTime() - renderedTask.start.getTime()) / msPerDay)
         : 0;
       // Store day-of-week offset (0=Mon, 6=Sun) to preserve position within week
-      // Convert to UTC first since renderedTask.start might be at local midnight
-      const startUTC = renderedTask.start ? localToUTC(renderedTask.start) : null;
-      const startDayOfWeek = startUTC
-        ? (startUTC.getUTCDay() + 6) % 7  // Convert JS Sun=0 to Mon=0
+      // Dates are already UTC
+      const startDayOfWeek = renderedTask.start
+        ? (renderedTask.start.getUTCDay() + 6) % 7  // Convert JS Sun=0 to Mon=0
         : 0;
       console.log('[copy] task:', task.text, 'durationDays:', durationDays, 'startDayOfWeek:', startDayOfWeek, '$w:', $w);
       return { ...clean, _durationDays: durationDays, _startDayOfWeek: startDayOfWeek, _originalWidth: $w, _originalHeight: $h };
@@ -1189,20 +1183,16 @@ function Bars(props) {
 
     if (validTasks.length === 0) return;
 
-    // Store base date (earliest start) - convert to UTC for consistent alignment
+    // Store base date (earliest start) - dates are already UTC
     const baseDate = validTasks.reduce((min, t) => {
       if (!t.start) return min;
-      const startUTC = localToUTC(t.start);
-      return !min || startUTC < min ? startUTC : min;
+      return !min || t.start < min ? t.start : min;
     }, null);
 
-    // Store clipboard data with cell offsets (weeks between tasks) and day-level precision
-    // Convert all dates to UTC for consistent calculations
+    // Store clipboard data with cell offsets (weeks between tasks)
     clipboardTasks = validTasks.map(t => ({
       ...t,
-      start: t.start ? localToUTC(t.start) : t.start,
-      end: t.end ? localToUTC(t.end) : t.end,
-      _startCellOffset: getCellOffset(t.start ? localToUTC(t.start) : null, baseDate, scalesValue),
+      _startCellOffset: getCellOffset(t.start, baseDate, scalesValue),
     }));
     clipboardParent = commonParent;
     clipboardBaseDate = baseDate;
