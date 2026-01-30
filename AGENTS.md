@@ -326,6 +326,148 @@ const [bulkMove, setBulkMove] = useState(null); // {baseTaskId, startX, dx, orig
 }
 ```
 
+## Copy-Paste with Preview Feature
+
+### Feature Description
+
+Ctrl+C copies selected tasks, Ctrl+V enters paste preview mode showing ghost tasks that follow the cursor. Click confirms paste, Esc cancels.
+
+### CRITICAL: Position Calculation Learnings
+
+When `lengthUnit="week"`, the gantt snaps task rendering to week boundaries. This creates challenges for copy-paste:
+
+#### Problem: Visual Width Mismatch
+
+Tasks with same duration can have different visual widths (`$w`) depending on which days they span:
+- Task Mon→Fri (4 days) within 1 week column → `$w: 80px`
+- Task Sat→Sat (7 days) crossing week boundary → `$w: 160px`
+
+**Solution**: Store exact duration in DAYS, not cells/weeks. Store day-of-week offset to preserve position within week.
+
+#### Problem: Ghost Preview Position Offset
+
+Converting pixel→date→pixel causes offset errors because:
+- `pixelToDate()` returns dates based on `scales.start` alignment
+- Snapping to Monday can shift dates backward/forward unexpectedly
+- `dateToPixel()` may not match gantt's internal `$x` calculation
+
+**Solution**: Calculate ghost position DIRECTLY from pixels:
+```js
+const cellIndex = Math.floor(currentX / lengthUnitWidth);
+const x = (cellIndex + task._startCellOffset) * lengthUnitWidth;
+```
+
+### Clipboard Data Structure
+
+When copying tasks, store these fields:
+
+```js
+{
+  ...taskData,
+  _startCellOffset: number,   // Weeks from base task (for multi-task alignment)
+  _startDayOfWeek: number,    // 0=Mon, 6=Sun (preserve position within week)
+  _durationDays: number,      // Exact days (NOT cells!) for correct visual width
+  _originalWidth: number,     // $w value for ghost preview
+  _originalHeight: number,    // $h value for ghost preview (includes margins)
+}
+```
+
+### Implementation (Bars.jsx)
+
+**Module-level clipboard:**
+```js
+let clipboardTasks = [];
+let clipboardBaseDate = null;
+let clipboardParent = null;
+```
+
+**State:**
+```js
+const [pastePreview, setPastePreview] = useState(null);
+// Shape: { tasks: [], baseDate, parent, currentX }
+```
+
+**Copy handler stores:**
+- `_startCellOffset`: `getCellOffset(task.start, baseDate, scales)` - weeks from earliest task
+- `_startDayOfWeek`: `(task.start.getDay() + 6) % 7` - converts JS Sun=0 to Mon=0
+- `_durationDays`: `Math.round((end - start) / msPerDay)` - exact days
+
+**Paste execution:**
+```js
+// Snap target to Monday
+const targetWeekStart = new Date(targetDate);
+const dow = targetWeekStart.getDay();
+const daysToMonday = dow === 0 ? -6 : 1 - dow;
+targetWeekStart.setDate(targetWeekStart.getDate() + daysToMonday);
+
+// Calculate new dates
+const weekOffset = addCells(targetWeekStart, task._startCellOffset, scales);
+const newStart = new Date(weekOffset.getTime() + task._startDayOfWeek * msPerDay);
+const newEnd = new Date(newStart.getTime() + task._durationDays * msPerDay);
+```
+
+**Ghost preview position (IMPORTANT - use pixels directly):**
+```js
+// DON'T convert through dates - causes offset errors!
+const cellIndex = Math.floor(currentX / lengthUnitWidth);
+const x = (cellIndex + task._startCellOffset) * lengthUnitWidth;
+const w = task._originalWidth;
+const h = task._originalHeight;
+```
+
+### Helper Functions
+
+```js
+// Pixel to date (snaps to cell start)
+const pixelToDate = (px, scales) => {
+  const units = Math.floor(px / scales.lengthUnitWidth);
+  return new Date(scales.start.getTime() + units * daysPerUnit * msPerDay);
+};
+
+// Cell offset between dates (in whole cells)
+const getCellOffset = (date, baseDate, scales) => {
+  return Math.round((date - baseDate) / msPerUnit);
+};
+
+// Add cells to date
+const addCells = (date, cells, scales) => {
+  return new Date(date.getTime() + cells * msPerUnit);
+};
+```
+
+### Key Behaviors
+
+- **Same parent only**: Tasks must share parent to be copied together
+- **Row preserved**: Each task keeps its original `row` value
+- **Undo batching**: Uses `history.startBatch()`/`endBatch()` + `skipUndo` for single undo
+- **Esc cancels**: Separate keydown listener for reliability
+
+### Files Modified
+
+- `src/components/chart/Bars.jsx` - Main copy-paste logic
+- `src/components/chart/Bars.css` - Ghost styling
+
+### CSS
+
+```css
+.wx-paste-preview.wx-bar.wx-GKbcLEGA {
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 5;
+  border: 2px dashed var(--wx-color-primary, #2196f3);
+}
+```
+
+### Usage
+
+```jsx
+<Gantt
+  tasks={tasks}
+  copyPaste={true}
+  undo={true}
+/>
+```
+
 ## Development Patterns
 
 ### Adding New Features

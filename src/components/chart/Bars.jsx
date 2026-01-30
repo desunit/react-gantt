@@ -30,7 +30,10 @@ const pixelToDate = (px, scales) => {
   const daysPerUnit = lengthUnit === 'week' ? 7 : lengthUnit === 'month' ? 30 : lengthUnit === 'quarter' ? 91 : lengthUnit === 'year' ? 365 : 1;
   // Floor to snap to the beginning of the cell
   const units = Math.floor(px / lengthUnitWidth);
-  return new Date(start.getTime() + units * daysPerUnit * msPerDay);
+  const date = new Date(start.getTime() + units * daysPerUnit * msPerDay);
+  // Normalize to start of day (midnight) to avoid timezone issues
+  date.setHours(0, 0, 0, 0);
+  return date;
 };
 
 // Get cell offset (in whole cells) between two dates
@@ -50,18 +53,10 @@ const addCells = (date, cells, scales) => {
   const msPerDay = 86400000;
   const daysPerUnit = lengthUnit === 'week' ? 7 : lengthUnit === 'month' ? 30 : lengthUnit === 'quarter' ? 91 : lengthUnit === 'year' ? 365 : 1;
   const msPerUnit = daysPerUnit * msPerDay;
-  return new Date(date.getTime() + cells * msPerUnit);
-};
-
-// Date to pixel conversion helper
-const dateToPixel = (date, scales) => {
-  if (!scales || !scales.start || !date) return 0;
-  const { start, lengthUnitWidth, lengthUnit } = scales;
-  const msPerDay = 86400000;
-  const daysPerUnit = lengthUnit === 'week' ? 7 : lengthUnit === 'month' ? 30 : lengthUnit === 'quarter' ? 91 : lengthUnit === 'year' ? 365 : 1;
-  const msPerUnit = daysPerUnit * msPerDay;
-  const units = (date.getTime() - start.getTime()) / msPerUnit;
-  return units * lengthUnitWidth;
+  const result = new Date(date.getTime() + cells * msPerUnit);
+  // Normalize to start of day to avoid timezone drift
+  result.setHours(0, 0, 0, 0);
+  return result;
 };
 
 function Bars(props) {
@@ -897,24 +892,37 @@ function Bars(props) {
     // Note: parent can be 0 (root level), so check for undefined/null specifically
     if (parent === undefined || parent === null) return;
 
+    const msPerDay = 86400000;
     const history = api.getHistory();
     history?.startBatch();
 
+    // Snap target date to the start of the week (Monday)
+    const targetWeekStart = new Date(targetDate);
+    const dow = targetWeekStart.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+    const daysToMonday = dow === 0 ? -6 : 1 - dow;
+    targetWeekStart.setDate(targetWeekStart.getDate() + daysToMonday);
+    targetWeekStart.setHours(0, 0, 0, 0);
+
     tasks.forEach((task, i) => {
       const newId = `task-${Date.now()}-${i}`;
-      // Use cell offsets to preserve alignment
-      const newStart = addCells(targetDate, task._startCellOffset || 0, scalesValue);
-      const newEnd = addCells(newStart, task._durationCells || 0, scalesValue);
+      // Calculate the week offset from the target week, then add the day-of-week offset
+      const weekOffset = addCells(targetWeekStart, task._startCellOffset || 0, scalesValue);
+      const newStart = new Date(weekOffset.getTime() + (task._startDayOfWeek || 0) * msPerDay);
+      newStart.setHours(0, 0, 0, 0);
+      // Add exact duration in days (not weeks!) to preserve visual width
+      const newEnd = new Date(newStart.getTime() + (task._durationDays || 7) * msPerDay);
+      newEnd.setHours(0, 0, 0, 0);
+      console.log('[paste] task:', task.text, 'newStart:', newStart, 'newEnd:', newEnd, '_durationDays:', task._durationDays, '_startDayOfWeek:', task._startDayOfWeek);
 
       api.exec('add-task', {
         task: {
-          ...task,
           id: newId,
+          text: task.text,
           start: newStart,
           end: newEnd,
-          // Keep original parent and row from copied task
+          type: task.type || 'task',
           parent: parent,
-          row: task.row, // Each task keeps its own row
+          row: task.row,
         },
         target: parent,
         mode: 'child',
@@ -944,6 +952,13 @@ function Bars(props) {
 
       const id = locateID(e.target);
       if (id) {
+        // Debug: log task info on click
+        const clickedTask = api.getTask(id);
+        const renderedTask = rTasksValue.find(t => t.id === id);
+        console.log('[click] task:', clickedTask?.text, 'id:', id);
+        console.log('[click] api.getTask:', { start: clickedTask?.start, end: clickedTask?.end, duration: clickedTask?.duration });
+        console.log('[click] rendered:', { start: renderedTask?.start, end: renderedTask?.end, $w: renderedTask?.$w, $x: renderedTask?.$x });
+
         const css = e.target.classList;
         if (css.contains('wx-link')) {
           const toStart = css.contains('wx-left');
@@ -1078,13 +1093,26 @@ function Bars(props) {
     const selected = api.getState()._selected;
     if (!selected || !selected.length) return;
 
-    // Get all selected tasks (preserve $w for preview rendering)
+    const msPerDay = 86400000;
+
+    // Get all selected tasks with their render data from _tasks
     const tasks = selected.map((sel) => {
       const task = api.getTask(sel.id);
       if (!task) return null;
-      const { $x, $y, $h, $skip, $level, $index, $y_base, $x_base, $w_base, $h_base, $skip_baseline, $critical, $reorder, ...clean } = task;
-      // Keep $w for accurate ghost width rendering
-      return { ...clean, _originalWidth: task.$w };
+      // Find the rendered task to get $w (pixel width) and row
+      const renderedTask = rTasksValue.find(t => t.id === sel.id);
+      if (!renderedTask) return null;
+      const { $x, $y, $h, $w, $skip, $level, $index, $y_base, $x_base, $w_base, $h_base, $skip_baseline, $critical, $reorder, ...clean } = renderedTask;
+      // Calculate exact duration in days (not cells!) to preserve visual width
+      const durationDays = renderedTask.end && renderedTask.start
+        ? Math.round((renderedTask.end.getTime() - renderedTask.start.getTime()) / msPerDay)
+        : 0;
+      // Store day-of-week offset (0=Mon, 6=Sun) to preserve position within week
+      const startDayOfWeek = renderedTask.start
+        ? (renderedTask.start.getDay() + 6) % 7  // Convert JS Sun=0 to Mon=0
+        : 0;
+      console.log('[copy] task:', task.text, 'durationDays:', durationDays, 'startDayOfWeek:', startDayOfWeek, '$w:', $w);
+      return { ...clean, _durationDays: durationDays, _startDayOfWeek: startDayOfWeek, _originalWidth: $w, _originalHeight: $h };
     }).filter(Boolean);
 
     if (!tasks.length) return;
@@ -1098,17 +1126,16 @@ function Bars(props) {
 
     if (validTasks.length === 0) return;
 
-    // Store base date (earliest start)
+    // Store base date (earliest start) - snap to week start for consistent alignment
     const baseDate = validTasks.reduce((min, t) => {
       if (!t.start) return min;
       return !min || t.start < min ? t.start : min;
     }, null);
 
-    // Store clipboard data with cell offsets (to preserve alignment)
+    // Store clipboard data with cell offsets (weeks between tasks) and day-level precision
     clipboardTasks = validTasks.map(t => ({
       ...t,
       _startCellOffset: getCellOffset(t.start, baseDate, scalesValue),
-      _durationCells: getCellOffset(t.end, t.start, scalesValue),
     }));
     clipboardParent = commonParent;
     clipboardBaseDate = baseDate;
@@ -1324,19 +1351,19 @@ function Bars(props) {
       )}
       {pastePreview && pastePreview.currentX != null && (
         pastePreview.tasks.map((task, i) => {
-          const targetDate = pixelToDate(pastePreview.currentX, scalesValue);
-          if (!targetDate) return null;
-          const newStart = addCells(targetDate, task._startCellOffset || 0, scalesValue);
-          const newEnd = addCells(newStart, task._durationCells || 0, scalesValue);
-          const x = dateToPixel(newStart, scalesValue);
-          const w = dateToPixel(newEnd, scalesValue) - x;
+          // Calculate ghost x position directly from pixel position (snap to week cell)
+          const cellIndex = Math.floor(pastePreview.currentX / lengthUnitWidth);
+          const x = (cellIndex + (task._startCellOffset || 0)) * lengthUnitWidth;
+          // Use original width and height for accurate ghost size
+          const w = task._originalWidth || lengthUnitWidth;
+          const h = task._originalHeight || cellHeight;
           // Find row Y position using rowYPositions map or fallback
           const rowY = rowYPositions.get(task.row) ?? (task.$y || 0);
           return (
             <div
               key={`preview-${i}`}
               className="wx-GKbcLEGA wx-bar wx-task wx-paste-preview"
-              style={{ left: x, top: rowY, width: w, height: cellHeight }}
+              style={{ left: x, top: rowY, width: w, height: h }}
             >
               <div className="wx-GKbcLEGA wx-content">{task.text}</div>
             </div>
