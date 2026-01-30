@@ -23,6 +23,7 @@ let clipboardBaseDate = null;
 let clipboardParent = null;
 
 // Pixel to date conversion helper - snaps to cell start (beginning of week/day/etc)
+// All date operations use UTC to ignore timezones
 const pixelToDate = (px, scales) => {
   if (!scales || !scales.start) return null;
   const { start, lengthUnitWidth, lengthUnit } = scales;
@@ -31,8 +32,8 @@ const pixelToDate = (px, scales) => {
   // Floor to snap to the beginning of the cell
   const units = Math.floor(px / lengthUnitWidth);
   const date = new Date(start.getTime() + units * daysPerUnit * msPerDay);
-  // Normalize to start of day (midnight) to avoid timezone issues
-  date.setHours(0, 0, 0, 0);
+  // Normalize to start of day (UTC midnight)
+  date.setUTCHours(0, 0, 0, 0);
   return date;
 };
 
@@ -46,7 +47,7 @@ const getCellOffset = (date, baseDate, scales) => {
   return Math.round((date.getTime() - baseDate.getTime()) / msPerUnit);
 };
 
-// Add cells to a date
+// Add cells to a date (UTC)
 const addCells = (date, cells, scales) => {
   if (!scales || !date) return date;
   const { lengthUnit } = scales;
@@ -54,8 +55,8 @@ const addCells = (date, cells, scales) => {
   const daysPerUnit = lengthUnit === 'week' ? 7 : lengthUnit === 'month' ? 30 : lengthUnit === 'quarter' ? 91 : lengthUnit === 'year' ? 365 : 1;
   const msPerUnit = daysPerUnit * msPerDay;
   const result = new Date(date.getTime() + cells * msPerUnit);
-  // Normalize to start of day to avoid timezone drift
-  result.setHours(0, 0, 0, 0);
+  // Normalize to start of day (UTC midnight)
+  result.setUTCHours(0, 0, 0, 0);
   return result;
 };
 
@@ -951,22 +952,22 @@ function Bars(props) {
     const history = api.getHistory();
     history?.startBatch();
 
-    // Snap target date to the start of the week (Monday)
+    // Snap target date to the start of the week (Monday) - UTC
     const targetWeekStart = new Date(targetDate);
-    const dow = targetWeekStart.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+    const dow = targetWeekStart.getUTCDay(); // 0=Sun, 1=Mon, ..., 6=Sat
     const daysToMonday = dow === 0 ? -6 : 1 - dow;
-    targetWeekStart.setDate(targetWeekStart.getDate() + daysToMonday);
-    targetWeekStart.setHours(0, 0, 0, 0);
+    targetWeekStart.setUTCDate(targetWeekStart.getUTCDate() + daysToMonday);
+    targetWeekStart.setUTCHours(0, 0, 0, 0);
 
     tasks.forEach((task, i) => {
       const newId = `task-${Date.now()}-${i}`;
       // Calculate the week offset from the target week, then add the day-of-week offset
       const weekOffset = addCells(targetWeekStart, task._startCellOffset || 0, scalesValue);
       const newStart = new Date(weekOffset.getTime() + (task._startDayOfWeek || 0) * msPerDay);
-      newStart.setHours(0, 0, 0, 0);
+      newStart.setUTCHours(0, 0, 0, 0);
       // Add exact duration in days (not weeks!) to preserve visual width
       const newEnd = new Date(newStart.getTime() + (task._durationDays || 7) * msPerDay);
-      newEnd.setHours(0, 0, 0, 0);
+      newEnd.setUTCHours(0, 0, 0, 0);
       console.log('[paste] task:', task.text, 'newStart:', newStart, 'newEnd:', newEnd, '_durationDays:', task._durationDays, '_startDayOfWeek:', task._startDayOfWeek);
 
       api.exec('add-task', {
@@ -1162,9 +1163,9 @@ function Bars(props) {
       const durationDays = renderedTask.end && renderedTask.start
         ? Math.round((renderedTask.end.getTime() - renderedTask.start.getTime()) / msPerDay)
         : 0;
-      // Store day-of-week offset (0=Mon, 6=Sun) to preserve position within week
+      // Store day-of-week offset (0=Mon, 6=Sun) to preserve position within week (UTC)
       const startDayOfWeek = renderedTask.start
-        ? (renderedTask.start.getDay() + 6) % 7  // Convert JS Sun=0 to Mon=0
+        ? (renderedTask.start.getUTCDay() + 6) % 7  // Convert JS Sun=0 to Mon=0
         : 0;
       console.log('[copy] task:', task.text, 'durationDays:', durationDays, 'startDayOfWeek:', startDayOfWeek, '$w:', $w);
       return { ...clean, _durationDays: durationDays, _startDayOfWeek: startDayOfWeek, _originalWidth: $w, _originalHeight: $h };

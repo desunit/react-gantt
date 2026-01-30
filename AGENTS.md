@@ -339,6 +339,7 @@ When `lengthUnit="week"`, the gantt snaps task rendering to week boundaries. Thi
 #### Problem: Visual Width Mismatch
 
 Tasks with same duration can have different visual widths (`$w`) depending on which days they span:
+
 - Task Mon→Fri (4 days) within 1 week column → `$w: 80px`
 - Task Sat→Sat (7 days) crossing week boundary → `$w: 160px`
 
@@ -347,11 +348,13 @@ Tasks with same duration can have different visual widths (`$w`) depending on wh
 #### Problem: Ghost Preview Position Offset
 
 Converting pixel→date→pixel causes offset errors because:
+
 - `pixelToDate()` returns dates based on `scales.start` alignment
 - Snapping to Monday can shift dates backward/forward unexpectedly
 - `dateToPixel()` may not match gantt's internal `$x` calculation
 
 **Solution**: Calculate ghost position DIRECTLY from pixels:
+
 ```js
 const cellIndex = Math.floor(currentX / lengthUnitWidth);
 const x = (cellIndex + task._startCellOffset) * lengthUnitWidth;
@@ -375,6 +378,7 @@ When copying tasks, store these fields:
 ### Implementation (Bars.jsx)
 
 **Module-level clipboard:**
+
 ```js
 let clipboardTasks = [];
 let clipboardBaseDate = null;
@@ -382,17 +386,20 @@ let clipboardParent = null;
 ```
 
 **State:**
+
 ```js
 const [pastePreview, setPastePreview] = useState(null);
 // Shape: { tasks: [], baseDate, parent, currentX }
 ```
 
 **Copy handler stores:**
+
 - `_startCellOffset`: `getCellOffset(task.start, baseDate, scales)` - weeks from earliest task
 - `_startDayOfWeek`: `(task.start.getDay() + 6) % 7` - converts JS Sun=0 to Mon=0
 - `_durationDays`: `Math.round((end - start) / msPerDay)` - exact days
 
 **Paste execution:**
+
 ```js
 // Snap target to Monday
 const targetWeekStart = new Date(targetDate);
@@ -402,11 +409,14 @@ targetWeekStart.setDate(targetWeekStart.getDate() + daysToMonday);
 
 // Calculate new dates
 const weekOffset = addCells(targetWeekStart, task._startCellOffset, scales);
-const newStart = new Date(weekOffset.getTime() + task._startDayOfWeek * msPerDay);
+const newStart = new Date(
+  weekOffset.getTime() + task._startDayOfWeek * msPerDay,
+);
 const newEnd = new Date(newStart.getTime() + task._durationDays * msPerDay);
 ```
 
 **Ghost preview position (IMPORTANT - use pixels directly):**
+
 ```js
 // DON'T convert through dates - causes offset errors!
 const cellIndex = Math.floor(currentX / lengthUnitWidth);
@@ -461,11 +471,7 @@ const addCells = (date, cells, scales) => {
 ### Usage
 
 ```jsx
-<Gantt
-  tasks={tasks}
-  copyPaste={true}
-  undo={true}
-/>
+<Gantt tasks={tasks} copyPaste={true} undo={true} />
 ```
 
 ## Development Patterns
@@ -570,3 +576,38 @@ export interface ITask extends IBaseTask {
 ```
 
 This shadows the imported type with extended version.
+
+## UTC Date Handling
+
+**All date operations use UTC** to ignore timezones and ensure consistent behavior across different user locations.
+
+### Key Changes
+
+All JavaScript Date methods use UTC variants:
+
+| Local Method    | UTC Method         |
+| --------------- | ------------------ |
+| `getDay()`      | `getUTCDay()`      |
+| `getDate()`     | `getUTCDate()`     |
+| `getMonth()`    | `getUTCMonth()`    |
+| `getFullYear()` | `getUTCFullYear()` |
+| `getHours()`    | `getUTCHours()`    |
+| `setDate()`     | `setUTCDate()`     |
+| `setHours()`    | `setUTCHours()`    |
+
+### Files Modified for UTC
+
+- **Bars.jsx** - `pixelToDate()`, `addCells()`, copy-paste handlers
+- **Chart.jsx** - Current week detection for scroll-to-current-week
+- **Gantt.jsx** - `isCurrentWeek()` calculation for week highlighting
+- **DateTimePicker.jsx** - Preserves time when changing date
+
+### Creating UTC Dates
+
+```js
+// Create UTC midnight
+const date = new Date(Date.UTC(year, month, day));
+
+// Normalize existing date to UTC midnight
+date.setUTCHours(0, 0, 0, 0);
+```

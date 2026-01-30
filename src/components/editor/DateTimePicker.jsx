@@ -7,8 +7,9 @@ export default function DateTimePicker(props) {
 
   function handleDateChange(ev) {
     const current = new Date(ev.value);
-    current.setHours(value.getHours());
-    current.setMinutes(value.getMinutes());
+    // Preserve time from original value (UTC)
+    current.setUTCHours(value.getUTCHours());
+    current.setUTCMinutes(value.getUTCMinutes());
 
     onChangeHandler && onChangeHandler({ value: current });
   }

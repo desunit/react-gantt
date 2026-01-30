@@ -328,21 +328,21 @@ const Gantt = forwardRef(function Gantt(
     });
   }
 
-  // Helper to check if a date is in the current week
+  // Helper to check if a date is in the current week (UTC)
   const isCurrentWeek = useMemo(() => {
     const now = new Date();
     const weekStart = lCalendar?.weekStart ?? 0; // 0 = Sunday, 1 = Monday
 
-    // Get start of current week
-    const currentWeekStart = new Date(now);
-    const dayOfWeek = currentWeekStart.getDay();
+    // Get start of current week (UTC)
+    const currentWeekStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const dayOfWeek = currentWeekStart.getUTCDay();
     const diff = (dayOfWeek - weekStart + 7) % 7;
-    currentWeekStart.setDate(currentWeekStart.getDate() - diff);
-    currentWeekStart.setHours(0, 0, 0, 0);
+    currentWeekStart.setUTCDate(currentWeekStart.getUTCDate() - diff);
+    currentWeekStart.setUTCHours(0, 0, 0, 0);
 
-    // Get end of current week
+    // Get end of current week (UTC)
     const currentWeekEnd = new Date(currentWeekStart);
-    currentWeekEnd.setDate(currentWeekEnd.getDate() + 7);
+    currentWeekEnd.setUTCDate(currentWeekEnd.getUTCDate() + 7);
 
     return (date) => date >= currentWeekStart && date < currentWeekEnd;
   }, [lCalendar]);

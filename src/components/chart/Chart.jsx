@@ -283,19 +283,19 @@ function Chart(props) {
       cellPositions.push({ left: accumulatedWidth, width: cell.width });
 
       const cellStart = cell.date;
-      // Week cell: check if now is within 7 days of the cell start
+      // Week cell: check if now is within 7 days of the cell start (UTC)
       if (cell.unit === 'week') {
         const cellEnd = new Date(cellStart);
-        cellEnd.setDate(cellEnd.getDate() + 7);
+        cellEnd.setUTCDate(cellEnd.getUTCDate() + 7);
         if (now >= cellStart && now < cellEnd) {
           currentWeekIndex = i;
         }
       } else if (cell.unit === 'day') {
-        // Day cell: check if same date
+        // Day cell: check if same date (UTC)
         if (
-          now.getFullYear() === cellStart.getFullYear() &&
-          now.getMonth() === cellStart.getMonth() &&
-          now.getDate() === cellStart.getDate()
+          now.getUTCFullYear() === cellStart.getUTCFullYear() &&
+          now.getUTCMonth() === cellStart.getUTCMonth() &&
+          now.getUTCDate() === cellStart.getUTCDate()
         ) {
           currentWeekIndex = i;
         }
