@@ -9,7 +9,7 @@ export default function GanttMarqueeSelect({ skinSettings }) {
     // Horizon Media (Stellar Brands)
     { id: 'horizon', text: 'Horizon Media (Stellar Brands)', parent: 0, type: 'summary', open: true },
     { id: 'anderson-1', text: 'Anderson, Marcus', parent: 'horizon', type: 'task', start: new Date(2026, 2, 2), end: new Date(2026, 2, 13), row: 'horizon-anderson', $css: 'rotation-bar' },
-    { id: 'anderson-2', text: 'Anderson, Marcus', parent: 'horizon', type: 'task', start: new Date(2026, 2, 16), end: new Date(2026, 2, 27), row: 'horizon-anderson', $css: 'rotation-bar' },
+    { id: 'anderson-2', text: 'Anderson, Marcus', parent: 'horizon', type: 'task', start: new Date(2026, 2, 10), end: new Date(2026, 2, 20), row: 'horizon-anderson', $css: 'rotation-bar' }, // Overlaps with anderson-1!
     { id: 'anderson-3', text: 'Anderson, Marcus', parent: 'horizon', type: 'task', start: new Date(2026, 3, 6), end: new Date(2026, 3, 17), row: 'horizon-anderson', $css: 'rotation-bar' },
     { id: 'nakamura-1', text: 'Nakamura, Yuki', parent: 'horizon', type: 'task', start: new Date(2026, 2, 2), end: new Date(2026, 2, 8), row: 'horizon-nakamura', $css: 'rotation-bar' },
     { id: 'nakamura-2', text: 'Nakamura, Yuki', parent: 'horizon', type: 'task', start: new Date(2026, 2, 12), end: new Date(2026, 2, 20), row: 'horizon-nakamura', $css: 'rotation-bar' },
@@ -116,6 +116,7 @@ export default function GanttMarqueeSelect({ skinSettings }) {
           <li>Drag any selected task to move ALL selected tasks together</li>
           <li><strong>Copy/Paste:</strong> Select tasks, press Ctrl+C to copy, click on empty space, press Ctrl+V to paste</li>
           <li>Press Ctrl+Z to undo</li>
+          <li><strong>Overlap Warning:</strong> Tasks that overlap in the same row show a red border and warning icon</li>
         </ul>
       </div>
       <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
@@ -135,6 +136,7 @@ export default function GanttMarqueeSelect({ skinSettings }) {
           undo={true}
           currentWeekHighlight={true}
           scrollToCurrentWeek={true}
+          allowTaskIntersection={false}
         />
       </div>
     </div>

@@ -29,6 +29,7 @@ function Layout(props) {
     copyPaste = false,
     scrollToCurrentWeek = false,
     currentWeekColor = null,
+    allowTaskIntersection = true,
   } = props;
 
   const api = useContext(storeContext);
@@ -354,6 +355,7 @@ function Layout(props) {
                 copyPaste={copyPaste}
                 scrollToCurrentWeek={scrollToCurrentWeek}
                 currentWeekColor={currentWeekColor}
+                allowTaskIntersection={allowTaskIntersection}
               />
             </div>
           </div>

@@ -32,6 +32,8 @@ export interface IGanttConfig extends IConfig {
   currentWeekHighlight?: boolean;
   currentWeekColor?: string;
   scrollToCurrentWeek?: boolean;
+  /** When false, prevents tasks from overlapping in the same row during drag/move, resize, and copy-paste. Default: true */
+  allowTaskIntersection?: boolean;
 }
 
 export interface IColumnConfig extends Omit<IGanttColumn, 'header'> {

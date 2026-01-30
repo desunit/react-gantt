@@ -29,6 +29,7 @@ function Chart(props) {
     copyPaste = false,
     scrollToCurrentWeek = false,
     currentWeekColor = null,
+    allowTaskIntersection = true,
   } = props;
 
   const api = useContext(storeContext);
@@ -391,6 +392,7 @@ function Chart(props) {
           rowMapping={rowMapping}
           marqueeSelect={marqueeSelect}
           copyPaste={copyPaste}
+          allowTaskIntersection={allowTaskIntersection}
         />
       </div>
     </div>

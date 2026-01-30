@@ -59,6 +59,11 @@ const addCells = (date, cells, scales) => {
   return result;
 };
 
+// Check if two horizontal bounds overlap (AABB collision)
+const boundsOverlap = (left1, right1, left2, right2) => {
+  return left1 < right2 && right1 > left2;
+};
+
 function Bars(props) {
   const {
     readonly,
@@ -67,6 +72,7 @@ function Bars(props) {
     rowMapping = null,
     marqueeSelect = false,
     copyPaste = false,
+    allowTaskIntersection = true,
   } = props;
 
   const api = useContext(storeContext);
@@ -235,6 +241,55 @@ function Bars(props) {
     },
     [api],
   );
+
+  // Compute which tasks are overlapping with others in the same row
+  // Returns a Set of task IDs that have collisions
+  const overlappingTaskIds = useMemo(() => {
+    const overlapping = new Set();
+
+    // Only check for overlaps if allowTaskIntersection is false and multiTaskRows is enabled
+    if (allowTaskIntersection || !multiTaskRows || !rowMapping) {
+      return overlapping;
+    }
+
+    // Group tasks by row
+    const tasksByRow = new Map();
+    rTasksValue.forEach((task) => {
+      // Skip summary and milestone tasks
+      if (task.type === 'summary' || task.type === 'milestone') return;
+
+      const rowId = rowMapping.taskRows.get(task.id) ?? task.id;
+      if (!tasksByRow.has(rowId)) {
+        tasksByRow.set(rowId, []);
+      }
+      tasksByRow.get(rowId).push(task);
+    });
+
+    // Check each row for overlaps
+    tasksByRow.forEach((rowTasks) => {
+      if (rowTasks.length < 2) return;
+
+      // Check each pair of tasks in the row
+      for (let i = 0; i < rowTasks.length; i++) {
+        for (let j = i + 1; j < rowTasks.length; j++) {
+          const task1 = rowTasks[i];
+          const task2 = rowTasks[j];
+
+          const left1 = task1.$x;
+          const right1 = task1.$x + task1.$w;
+          const left2 = task2.$x;
+          const right2 = task2.$x + task2.$w;
+
+          if (boundsOverlap(left1, right1, left2, right2)) {
+            overlapping.add(task1.id);
+            overlapping.add(task2.id);
+          }
+        }
+      }
+    });
+
+    return overlapping;
+  }, [allowTaskIntersection, multiTaskRows, rowMapping, rTasksValue, rTasksCounter]);
 
   // Precompute adjusted Y positions for all tasks (used for marquee intersection)
   const taskYPositions = useMemo(() => {
@@ -1222,6 +1277,7 @@ function Bars(props) {
       />
       {adjustedTasks.map((task) => {
         if (task.$skip && task.$skip_baseline) return null;
+        const isOverlapping = overlappingTaskIds.has(task.id);
         const barClass =
           `wx-bar wx-${taskTypeCss(task.type)}` +
           (touched && taskMove && task.id === taskMove.id ? ' wx-touch' : '') +
@@ -1229,7 +1285,8 @@ function Bars(props) {
           (selectedIds.has(task.id) ? ' wx-selected' : '') +
           (isTaskCritical(task.id) ? ' wx-critical' : '') +
           (task.$reorder ? ' wx-reorder-task' : '') +
-          (splitTasks && task.segments ? ' wx-split' : '');
+          (splitTasks && task.segments ? ' wx-split' : '') +
+          (isOverlapping ? ' wx-collision' : '');
         const leftLinkClass =
           'wx-link wx-left' +
           (linkFrom ? ' wx-visible' : '') +
@@ -1303,6 +1360,11 @@ function Bars(props) {
                     ) : (
                       <div className="wx-GKbcLEGA wx-content">
                         {task.text || ''}
+                      </div>
+                    )}
+                    {isOverlapping && (
+                      <div className="wx-GKbcLEGA wx-collision-warning" title="This task overlaps with another task in the same row">
+                        !
                       </div>
                     )}
                   </>
