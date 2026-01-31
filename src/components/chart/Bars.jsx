@@ -30,9 +30,29 @@ const pixelToDate = (px, scales) => {
   const msPerDay = 86400000;
   const daysPerUnit = lengthUnit === 'week' ? 7 : lengthUnit === 'month' ? 30 : lengthUnit === 'quarter' ? 91 : lengthUnit === 'year' ? 365 : 1;
   const units = Math.floor(px / lengthUnitWidth);
-  // start is already UTC - just add the offset
-  const date = new Date(start.getTime() + units * daysPerUnit * msPerDay);
+
+  // For weeks: need to align to Monday since visual week columns start on Monday
+  // scales.start might not be a Monday, so we need to find the Monday of that week first
+  let alignedStart = start;
+  if (lengthUnit === 'week') {
+    const dow = start.getUTCDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+    const daysToMonday = dow === 0 ? -6 : 1 - dow; // Offset to get to Monday
+    alignedStart = new Date(start.getTime() + daysToMonday * msPerDay);
+    alignedStart.setUTCHours(0, 0, 0, 0);
+  }
+
+  const date = new Date(alignedStart.getTime() + units * daysPerUnit * msPerDay);
   date.setUTCHours(0, 0, 0, 0);
+
+  console.log('[pixelToDate]', {
+    px,
+    units,
+    scalesStart: start.toISOString(),
+    scalesStartDayOfWeek: start.getUTCDay(),
+    alignedStart: alignedStart.toISOString(),
+    result: date.toISOString(),
+  });
+
   return date;
 };
 
@@ -947,6 +967,12 @@ function Bars(props) {
     // Note: parent can be 0 (root level), so check for undefined/null specifically
     if (parent === undefined || parent === null) return;
 
+    console.log('[paste] executePaste called:', {
+      targetDate: targetDate.toISOString(),
+      taskCount: tasks.length,
+      parent,
+    });
+
     const msPerDay = 86400000;
     const history = api.getHistory();
     history?.startBatch();
@@ -967,7 +993,22 @@ function Bars(props) {
       // Add exact duration in days (not weeks!) to preserve visual width
       const newEnd = new Date(newStart.getTime() + (task._durationDays || 7) * msPerDay);
       newEnd.setUTCHours(0, 0, 0, 0);
-      console.log('[paste] task:', task.text, 'newStart:', newStart, 'newEnd:', newEnd, '_durationDays:', task._durationDays, '_startDayOfWeek:', task._startDayOfWeek);
+      console.log('[paste] task:', {
+        text: task.text,
+        original: { start: task.start?.toISOString?.(), end: task.end?.toISOString?.() },
+        calculated: {
+          targetWeekStart: targetWeekStart.toISOString(),
+          weekOffset: weekOffset.toISOString(),
+          newStart: newStart.toISOString(),
+          newEnd: newEnd.toISOString(),
+        },
+        clipboard: {
+          _startCellOffset: task._startCellOffset,
+          _startDayOfWeek: task._startDayOfWeek,
+          _durationDays: task._durationDays,
+        },
+        row: task.row,
+      });
 
       api.exec('add-task', {
         task: {
@@ -1168,7 +1209,18 @@ function Bars(props) {
       const startDayOfWeek = renderedTask.start
         ? (renderedTask.start.getUTCDay() + 6) % 7  // Convert JS Sun=0 to Mon=0
         : 0;
-      console.log('[copy] task:', task.text, 'durationDays:', durationDays, 'startDayOfWeek:', startDayOfWeek, '$w:', $w);
+      console.log('[copy] task:', {
+        id: task.id,
+        text: task.text,
+        start: renderedTask.start?.toISOString?.(),
+        end: renderedTask.end?.toISOString?.(),
+        durationDays,
+        startDayOfWeek,
+        $w,
+        $h,
+        row: renderedTask.row,
+        parent: renderedTask.parent,
+      });
       return { ...clean, _durationDays: durationDays, _startDayOfWeek: startDayOfWeek, _originalWidth: $w, _originalHeight: $h };
     }).filter(Boolean);
 
@@ -1196,6 +1248,20 @@ function Bars(props) {
     }));
     clipboardParent = commonParent;
     clipboardBaseDate = baseDate;
+
+    // Log clipboard summary for debugging
+    console.log('[copy] clipboard stored:', {
+      taskCount: clipboardTasks.length,
+      baseDate: baseDate?.toISOString?.(),
+      parent: commonParent,
+      tasks: clipboardTasks.map(t => ({
+        id: t.id,
+        text: t.text,
+        _startCellOffset: t._startCellOffset,
+        _startDayOfWeek: t._startDayOfWeek,
+        _durationDays: t._durationDays,
+      })),
+    });
   }, [api, scalesValue]);
 
   // Hotkey intercept for copy/paste
