@@ -350,7 +350,7 @@ Tasks with same duration can have different visual widths (`$w`) depending on wh
 Converting pixel→date→pixel causes offset errors because:
 
 - `pixelToDate()` returns dates based on `scales.start` alignment
-- Snapping to Monday can shift dates backward/forward unexpectedly
+- `scales.start` may not be Monday-aligned (depends on Gantt's `start` prop)
 - `dateToPixel()` may not match gantt's internal `$x` calculation
 
 **Solution**: Calculate ghost position DIRECTLY from pixels:
@@ -359,6 +359,12 @@ Converting pixel→date→pixel causes offset errors because:
 const cellIndex = Math.floor(currentX / lengthUnitWidth);
 const x = (cellIndex + task._startCellOffset) * lengthUnitWidth;
 ```
+
+#### Problem: Paste Position Offset (1-Week Shift)
+
+Original code snapped to Monday in `executePaste()`, causing tasks to appear in the wrong week when `scales.start` wasn't Monday-aligned.
+
+**Solution**: Use `targetDate` directly without Monday snapping. The paste position should match the visual column, which is based on `scales.start`.
 
 ### Clipboard Data Structure
 
@@ -401,21 +407,21 @@ const [pastePreview, setPastePreview] = useState(null);
 **Paste execution (all UTC):**
 
 ```js
-// Snap target to Monday (UTC)
-const targetWeekStart = new Date(targetDate);
-const dow = targetWeekStart.getUTCDay();
-const daysToMonday = dow === 0 ? -6 : 1 - dow;
-targetWeekStart.setUTCDate(targetWeekStart.getUTCDate() + daysToMonday);
-targetWeekStart.setUTCHours(0, 0, 0, 0);
+// Use targetDate directly - DON'T snap to Monday!
+// The library positions tasks based on scales.start which may not be Monday-aligned
+const targetColumnStart = new Date(targetDate);
+targetColumnStart.setUTCHours(0, 0, 0, 0);
 
-// Calculate new dates
-const weekOffset = addCells(targetWeekStart, task._startCellOffset, scales);
+// Calculate new dates using cell offset and day-of-week offset
+const cellOffset = addCells(targetColumnStart, task._startCellOffset, scales);
 const newStart = new Date(
-  weekOffset.getTime() + task._startDayOfWeek * msPerDay,
+  cellOffset.getTime() + task._startDayOfWeek * msPerDay,
 );
 newStart.setUTCHours(0, 0, 0, 0);
 const newEnd = new Date(newStart.getTime() + task._durationDays * msPerDay);
 ```
+
+**Important**: Do NOT snap to Monday in paste execution. The visual column position is determined by `scales.start`, not by Monday. Snapping to Monday causes a 1-week offset when `scales.start` is not Monday-aligned.
 
 **Ghost preview position (IMPORTANT - use pixels directly):**
 
@@ -587,13 +593,35 @@ This shadows the imported type with extended version.
 
 ## UTC Date Handling
 
-**All dates are UTC** - no timezone conversions inside the library. The consumer (e.g., operations-ui) is responsible for passing UTC dates.
+**CRITICAL: All dates MUST be UTC** - no timezone conversions inside the library. The consumer (e.g., operations-ui) is responsible for passing UTC dates.
+
+### Why This Matters
+
+Copy-paste relies on `getUTCDay()` to calculate day-of-week offsets. If dates are local instead of UTC:
+- A Monday task might appear as Saturday/Sunday depending on timezone
+- Pasted tasks will be offset by days or even weeks
+- Visual position won't match the actual dates
+
+**Bug example**: `new Date(2026, 3, 27)` creates April 27 at LOCAL midnight. In UTC+3 timezone, this becomes `2026-04-26T21:00:00.000Z` (April 26!), causing `getUTCDay()` to return Saturday instead of Monday.
 
 ### Simple Rule
 
 1. **All dates passed to Gantt must be UTC** (created with `Date.UTC()`)
 2. **All dates from Gantt events are UTC** (no conversion needed)
 3. **No `localToUTC` or timezone conversions inside Bars.jsx**
+
+### Creating UTC Dates
+
+```js
+// CORRECT - UTC midnight
+new Date(Date.UTC(2026, 3, 27))  // → 2026-04-27T00:00:00.000Z
+
+// WRONG - Local midnight (offset in UTC)
+new Date(2026, 3, 27)  // → 2026-04-26T21:00:00.000Z (in UTC+3)
+
+// Helper function for demos
+const utc = (y, m, d) => new Date(Date.UTC(y, m, d));
+```
 
 ### UTC Methods Used
 

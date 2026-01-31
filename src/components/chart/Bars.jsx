@@ -30,18 +30,8 @@ const pixelToDate = (px, scales) => {
   const msPerDay = 86400000;
   const daysPerUnit = lengthUnit === 'week' ? 7 : lengthUnit === 'month' ? 30 : lengthUnit === 'quarter' ? 91 : lengthUnit === 'year' ? 365 : 1;
   const units = Math.floor(px / lengthUnitWidth);
-
-  // For weeks: need to align to Monday since visual week columns start on Monday
-  // scales.start might not be a Monday, so we need to find the Monday of that week first
-  let alignedStart = start;
-  if (lengthUnit === 'week') {
-    const dow = start.getUTCDay(); // 0=Sun, 1=Mon, ..., 6=Sat
-    const daysToMonday = dow === 0 ? -6 : 1 - dow; // Offset to get to Monday
-    alignedStart = new Date(start.getTime() + daysToMonday * msPerDay);
-    alignedStart.setUTCHours(0, 0, 0, 0);
-  }
-
-  const date = new Date(alignedStart.getTime() + units * daysPerUnit * msPerDay);
+  // Use scales.start directly - the library uses this for rendering, so paste position should match
+  const date = new Date(start.getTime() + units * daysPerUnit * msPerDay);
   date.setUTCHours(0, 0, 0, 0);
 
   console.log('[pixelToDate]', {
@@ -49,7 +39,6 @@ const pixelToDate = (px, scales) => {
     units,
     scalesStart: start.toISOString(),
     scalesStartDayOfWeek: start.getUTCDay(),
-    alignedStart: alignedStart.toISOString(),
     result: date.toISOString(),
   });
 
@@ -977,18 +966,16 @@ function Bars(props) {
     const history = api.getHistory();
     history?.startBatch();
 
-    // Snap target date to the start of the week (Monday) - UTC
-    const targetWeekStart = new Date(targetDate);
-    const dow = targetWeekStart.getUTCDay(); // 0=Sun, 1=Mon, ..., 6=Sat
-    const daysToMonday = dow === 0 ? -6 : 1 - dow;
-    targetWeekStart.setUTCDate(targetWeekStart.getUTCDate() + daysToMonday);
-    targetWeekStart.setUTCHours(0, 0, 0, 0);
+    // Use targetDate directly as the start of the visual column
+    // Don't snap to Monday - the library positions tasks based on scales.start which may not be Monday
+    const targetColumnStart = new Date(targetDate);
+    targetColumnStart.setUTCHours(0, 0, 0, 0);
 
     tasks.forEach((task, i) => {
       const newId = `task-${Date.now()}-${i}`;
-      // Calculate the week offset from the target week, then add the day-of-week offset
-      const weekOffset = addCells(targetWeekStart, task._startCellOffset || 0, scalesValue);
-      const newStart = new Date(weekOffset.getTime() + (task._startDayOfWeek || 0) * msPerDay);
+      // Calculate the cell offset from the target column, then add day-of-week offset
+      const cellOffset = addCells(targetColumnStart, task._startCellOffset || 0, scalesValue);
+      const newStart = new Date(cellOffset.getTime() + (task._startDayOfWeek || 0) * msPerDay);
       newStart.setUTCHours(0, 0, 0, 0);
       // Add exact duration in days (not weeks!) to preserve visual width
       const newEnd = new Date(newStart.getTime() + (task._durationDays || 7) * msPerDay);
@@ -997,8 +984,8 @@ function Bars(props) {
         text: task.text,
         original: { start: task.start?.toISOString?.(), end: task.end?.toISOString?.() },
         calculated: {
-          targetWeekStart: targetWeekStart.toISOString(),
-          weekOffset: weekOffset.toISOString(),
+          targetColumnStart: targetColumnStart.toISOString(),
+          cellOffset: cellOffset.toISOString(),
           newStart: newStart.toISOString(),
           newEnd: newEnd.toISOString(),
         },
