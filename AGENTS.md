@@ -598,26 +598,50 @@ This shadows the imported type with extended version.
 ### Why This Matters
 
 Copy-paste relies on `getUTCDay()` to calculate day-of-week offsets. If dates are local instead of UTC:
+
 - A Monday task might appear as Saturday/Sunday depending on timezone
 - Pasted tasks will be offset by days or even weeks
 - Visual position won't match the actual dates
 
 **Bug example**: `new Date(2026, 3, 27)` creates April 27 at LOCAL midnight. In UTC+3 timezone, this becomes `2026-04-26T21:00:00.000Z` (April 26!), causing `getUTCDay()` to return Saturday instead of Monday.
 
-### Simple Rule
+### The scales.start Alignment Fix
+
+The Gantt store (`@svar-ui/gantt-store`) processes the `start` prop and creates `scales.start`. This value may NOT be at 00:00 UTC - it can be at local midnight in the user's timezone (e.g., 21:00 UTC in UTC+3).
+
+**Solution**: In `Bars.jsx`, we normalize `scalesValue.start` to UTC midnight using a `useMemo`:
+
+```js
+const scalesValue = useMemo(() => {
+  if (!scalesValueRaw?.start) return scalesValueRaw;
+  const normalizedStart = new Date(
+    Date.UTC(
+      scalesValueRaw.start.getFullYear(),
+      scalesValueRaw.start.getMonth(),
+      scalesValueRaw.start.getDate(),
+    ),
+  );
+  return { ...scalesValueRaw, start: normalizedStart };
+}, [scalesValueRaw]);
+```
+
+This ensures all date calculations in `pixelToDate()`, `addCells()`, and `executePaste()` use UTC midnight consistently, so paste operations land in the correct visual column.
+
+### Simple Rules
 
 1. **All dates passed to Gantt must be UTC** (created with `Date.UTC()`)
 2. **All dates from Gantt events are UTC** (no conversion needed)
 3. **No `localToUTC` or timezone conversions inside Bars.jsx**
+4. **Preserve hours from `scales.start`** - don't normalize to UTC midnight in position calculations
 
 ### Creating UTC Dates
 
 ```js
 // CORRECT - UTC midnight
-new Date(Date.UTC(2026, 3, 27))  // → 2026-04-27T00:00:00.000Z
+new Date(Date.UTC(2026, 3, 27)); // → 2026-04-27T00:00:00.000Z
 
 // WRONG - Local midnight (offset in UTC)
-new Date(2026, 3, 27)  // → 2026-04-26T21:00:00.000Z (in UTC+3)
+new Date(2026, 3, 27); // → 2026-04-26T21:00:00.000Z (in UTC+3)
 
 // Helper function for demos
 const utc = (y, m, d) => new Date(Date.UTC(y, m, d));
@@ -637,7 +661,9 @@ const utc = (y, m, d) => new Date(Date.UTC(y, m, d));
 ### Key Functions (Bars.jsx)
 
 ```js
-// Pixel to date - uses scales.start directly (already UTC)
+// scales.start is normalized to UTC midnight in useMemo (see above)
+
+// Pixel to date - returns UTC midnight
 const pixelToDate = (px, scales) => {
   const units = Math.floor(px / scales.lengthUnitWidth);
   const date = new Date(
@@ -645,6 +671,13 @@ const pixelToDate = (px, scales) => {
   );
   date.setUTCHours(0, 0, 0, 0);
   return date;
+};
+
+// Add cells - returns UTC midnight
+const addCells = (date, cells, scales) => {
+  const result = new Date(date.getTime() + cells * msPerUnit);
+  result.setUTCHours(0, 0, 0, 0);
+  return result;
 };
 
 // Copy handler - dates are already UTC, no conversion

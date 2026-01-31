@@ -23,14 +23,13 @@ let clipboardBaseDate = null;
 let clipboardParent = null;
 
 // Pixel to date conversion helper - snaps to cell start (beginning of week/day/etc)
-// All dates are expected to be UTC - no timezone conversion needed
+// scales.start is normalized to UTC midnight in useMemo above
 const pixelToDate = (px, scales) => {
   if (!scales || !scales.start) return null;
   const { start, lengthUnitWidth, lengthUnit } = scales;
   const msPerDay = 86400000;
   const daysPerUnit = lengthUnit === 'week' ? 7 : lengthUnit === 'month' ? 30 : lengthUnit === 'quarter' ? 91 : lengthUnit === 'year' ? 365 : 1;
   const units = Math.floor(px / lengthUnitWidth);
-  // Use scales.start directly - the library uses this for rendering, so paste position should match
   const date = new Date(start.getTime() + units * daysPerUnit * msPerDay);
   date.setUTCHours(0, 0, 0, 0);
 
@@ -38,7 +37,6 @@ const pixelToDate = (px, scales) => {
     px,
     units,
     scalesStart: start.toISOString(),
-    scalesStartDayOfWeek: start.getUTCDay(),
     result: date.toISOString(),
   });
 
@@ -55,16 +53,19 @@ const getCellOffset = (date, baseDate, scales) => {
   return Math.round((date.getTime() - baseDate.getTime()) / msPerUnit);
 };
 
-// Add cells to a date (UTC)
+// Add cells to a date (returns UTC midnight)
 const addCells = (date, cells, scales) => {
-  if (!scales || !date) return date;
+  if (!scales || !date) {
+    console.log('[addCells] early return:', { scales: !!scales, date: date?.toISOString?.() });
+    return date;
+  }
   const { lengthUnit } = scales;
   const msPerDay = 86400000;
   const daysPerUnit = lengthUnit === 'week' ? 7 : lengthUnit === 'month' ? 30 : lengthUnit === 'quarter' ? 91 : lengthUnit === 'year' ? 365 : 1;
   const msPerUnit = daysPerUnit * msPerDay;
   const result = new Date(date.getTime() + cells * msPerUnit);
-  // Normalize to start of day (UTC midnight)
   result.setUTCHours(0, 0, 0, 0);
+  console.log('[addCells]', { date: date.toISOString(), cells, lengthUnit, result: result.toISOString() });
   return result;
 };
 
@@ -89,8 +90,33 @@ function Bars(props) {
   const [rTasksValue, rTasksCounter] = useStoreWithCounter(api, '_tasks');
   const [rLinksValue, rLinksCounter] = useStoreWithCounter(api, '_links');
   const areaValue = useStore(api, 'area');
-  const scalesValue = useStore(api, '_scales');
+  const scalesValueRaw = useStore(api, '_scales');
   const taskTypesValue = useStore(api, 'taskTypes');
+
+  // Normalize scales.start to Monday at UTC midnight for consistent positioning
+  // The store may have scales.start at local midnight and/or not on Monday
+  const scalesValue = useMemo(() => {
+    if (!scalesValueRaw || !scalesValueRaw.start) return scalesValueRaw;
+    // First normalize to UTC midnight
+    const utcDate = new Date(Date.UTC(
+      scalesValueRaw.start.getFullYear(),
+      scalesValueRaw.start.getMonth(),
+      scalesValueRaw.start.getDate()
+    ));
+    // Then snap to Monday of that week (ISO week starts Monday)
+    const dayOfWeek = utcDate.getUTCDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+    const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Sun→-6, Mon→0, Tue→-1, etc.
+    const monday = new Date(utcDate.getTime() + daysToMonday * 86400000);
+    monday.setUTCHours(0, 0, 0, 0);
+    console.log('[scales-normalize]', {
+      raw: scalesValueRaw.start.toISOString(),
+      utc: utcDate.toISOString(),
+      dayOfWeek,
+      daysToMonday,
+      monday: monday.toISOString(),
+    });
+    return { ...scalesValueRaw, start: monday };
+  }, [scalesValueRaw]);
   const baselinesValue = useStore(api, 'baselines');
   const [selectedValue, selectedCounter] = useStoreWithCounter(api, '_selected');
   const scrollTaskStore = useStore(api, '_scrollTask');
@@ -966,34 +992,42 @@ function Bars(props) {
     const history = api.getHistory();
     history?.startBatch();
 
-    // Use targetDate directly as the start of the visual column
-    // Don't snap to Monday - the library positions tasks based on scales.start which may not be Monday
+    // Normalize targetDate to UTC midnight (scales.start is now normalized)
     const targetColumnStart = new Date(targetDate);
     targetColumnStart.setUTCHours(0, 0, 0, 0);
 
+    console.log('[paste] scalesValue:', {
+      start: scalesValue?.start?.toISOString?.(),
+      lengthUnit: scalesValue?.lengthUnit,
+      lengthUnitWidth: scalesValue?.lengthUnitWidth,
+    });
+
     tasks.forEach((task, i) => {
       const newId = `task-${Date.now()}-${i}`;
-      // Calculate the cell offset from the target column, then add day-of-week offset
+
+      console.log('[paste] task input:', {
+        text: task.text,
+        _startCellOffset: task._startCellOffset,
+        _startDayOfWeek: task._startDayOfWeek,
+        _durationDays: task._durationDays,
+        start: task.start?.toISOString?.(),
+        end: task.end?.toISOString?.(),
+      });
+
+      // Calculate the cell offset from the target column (scales.start is normalized to Monday)
       const cellOffset = addCells(targetColumnStart, task._startCellOffset || 0, scalesValue);
+      console.log('[paste] cellOffset:', cellOffset?.toISOString?.());
+
+      // Add day-of-week offset (scales.start is Monday, so _startDayOfWeek=0 means Monday)
       const newStart = new Date(cellOffset.getTime() + (task._startDayOfWeek || 0) * msPerDay);
       newStart.setUTCHours(0, 0, 0, 0);
       // Add exact duration in days (not weeks!) to preserve visual width
       const newEnd = new Date(newStart.getTime() + (task._durationDays || 7) * msPerDay);
       newEnd.setUTCHours(0, 0, 0, 0);
-      console.log('[paste] task:', {
+      console.log('[paste] task calculated:', {
         text: task.text,
-        original: { start: task.start?.toISOString?.(), end: task.end?.toISOString?.() },
-        calculated: {
-          targetColumnStart: targetColumnStart.toISOString(),
-          cellOffset: cellOffset.toISOString(),
-          newStart: newStart.toISOString(),
-          newEnd: newEnd.toISOString(),
-        },
-        clipboard: {
-          _startCellOffset: task._startCellOffset,
-          _startDayOfWeek: task._startDayOfWeek,
-          _durationDays: task._durationDays,
-        },
+        newStart: newStart.toISOString(),
+        newEnd: newEnd.toISOString(),
         row: task.row,
       });
 
