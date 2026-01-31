@@ -607,32 +607,41 @@ Copy-paste relies on `getUTCDay()` to calculate day-of-week offsets. If dates ar
 
 ### The scales.start Alignment Fix
 
-The Gantt store (`@svar-ui/gantt-store`) processes the `start` prop and creates `scales.start`. This value may NOT be at 00:00 UTC - it can be at local midnight in the user's timezone (e.g., 21:00 UTC in UTC+3).
+The Gantt store (`@svar-ui/gantt-store`) processes the `start` prop and creates `scales.start`. This value has two problems:
+1. May be at local midnight (e.g., 21:00 UTC in UTC+3), not 00:00 UTC
+2. May not be on Monday (e.g., Sunday), breaking week-based calculations
 
-**Solution**: In `Bars.jsx`, we normalize `scalesValue.start` to UTC midnight using a `useMemo`:
+**Solution**: In `Bars.jsx`, we normalize `scalesValue.start` to **Monday at UTC midnight**:
 
 ```js
 const scalesValue = useMemo(() => {
   if (!scalesValueRaw?.start) return scalesValueRaw;
-  const normalizedStart = new Date(
-    Date.UTC(
-      scalesValueRaw.start.getFullYear(),
-      scalesValueRaw.start.getMonth(),
-      scalesValueRaw.start.getDate(),
-    ),
-  );
-  return { ...scalesValueRaw, start: normalizedStart };
+  // First normalize to UTC midnight
+  const utcDate = new Date(Date.UTC(
+    scalesValueRaw.start.getFullYear(),
+    scalesValueRaw.start.getMonth(),
+    scalesValueRaw.start.getDate()
+  ));
+  // Then snap to Monday of that week (ISO week starts Monday)
+  const dayOfWeek = utcDate.getUTCDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(utcDate.getTime() + daysToMonday * 86400000);
+  monday.setUTCHours(0, 0, 0, 0);
+  return { ...scalesValueRaw, start: monday };
 }, [scalesValueRaw]);
 ```
 
-This ensures all date calculations in `pixelToDate()`, `addCells()`, and `executePaste()` use UTC midnight consistently, so paste operations land in the correct visual column.
+This ensures:
+- `pixelToDate()` returns Mondays for week-based calculations
+- `_startDayOfWeek` (0=Mon, 1=Tue, etc.) works correctly when added
+- Paste operations land in the correct visual column
 
 ### Simple Rules
 
 1. **All dates passed to Gantt must be UTC** (created with `Date.UTC()`)
 2. **All dates from Gantt events are UTC** (no conversion needed)
 3. **No `localToUTC` or timezone conversions inside Bars.jsx**
-4. **Preserve hours from `scales.start`** - don't normalize to UTC midnight in position calculations
+4. **scales.start is normalized to Monday at UTC midnight** in Bars.jsx useMemo
 
 ### Creating UTC Dates
 
@@ -661,29 +670,30 @@ const utc = (y, m, d) => new Date(Date.UTC(y, m, d));
 ### Key Functions (Bars.jsx)
 
 ```js
-// scales.start is normalized to UTC midnight in useMemo (see above)
+// scales.start is normalized to Monday at UTC midnight in useMemo (see above)
 
-// Pixel to date - returns UTC midnight
+// Pixel to date - returns Monday of clicked week (UTC midnight)
 const pixelToDate = (px, scales) => {
   const units = Math.floor(px / scales.lengthUnitWidth);
-  const date = new Date(
-    scales.start.getTime() + units * daysPerUnit * msPerDay,
-  );
+  const date = new Date(scales.start.getTime() + units * daysPerUnit * msPerDay);
   date.setUTCHours(0, 0, 0, 0);
   return date;
 };
 
-// Add cells - returns UTC midnight
+// Add cells (weeks) to a date - returns UTC midnight
 const addCells = (date, cells, scales) => {
   const result = new Date(date.getTime() + cells * msPerUnit);
   result.setUTCHours(0, 0, 0, 0);
   return result;
 };
 
-// Copy handler - dates are already UTC, no conversion
+// Copy handler - store day offset from Monday (Mon=0, Sun=6)
 const startDayOfWeek = task.start
-  ? (task.start.getUTCDay() + 6) % 7 // Mon=0, Sun=6
+  ? (task.start.getUTCDay() + 6) % 7
   : 0;
+
+// Paste handler - add day offset to Monday to get correct start day
+const newStart = new Date(cellOffset.getTime() + (task._startDayOfWeek || 0) * msPerDay);
 ```
 
 ### Consumer Responsibility
