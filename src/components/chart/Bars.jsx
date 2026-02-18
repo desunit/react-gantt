@@ -1448,7 +1448,7 @@ function Bars(props) {
                       <BarSegments task={task} type={taskTypeCss(task.type)} />
                     ) : (
                       <div className="wx-GKbcLEGA wx-content">
-                        {task.text || ''}
+                        {task.$barText || task.text || ''}
                       </div>
                     )}
                     {isOverlapping && (
@@ -1463,7 +1463,7 @@ function Bars(props) {
                     {TaskTemplate ? (
                       <TaskTemplate data={task} api={api} onAction={forward} />
                     ) : (
-                      <div className="wx-GKbcLEGA wx-text-out">{task.text}</div>
+                      <div className="wx-GKbcLEGA wx-text-out">{task.$barText || task.text}</div>
                     )}
                   </>
                 )}
@@ -1516,7 +1516,7 @@ function Bars(props) {
               className="wx-GKbcLEGA wx-bar wx-task wx-paste-preview"
               style={{ left: x, top: rowY, width: w, height: h }}
             >
-              <div className="wx-GKbcLEGA wx-content">{task.text}</div>
+              <div className="wx-GKbcLEGA wx-content">{task.$barText || task.text}</div>
             </div>
           );
         })

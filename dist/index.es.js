@@ -5,7 +5,7 @@ import { locate as Ge, locateID as qe, locateAttr as fn, dateToString as rt, loc
 import { en as lt } from "@svar-ui/gantt-locales";
 import { en as dt } from "@svar-ui/core-locales";
 import { EventBusRouter as hn } from "@svar-ui/lib-state";
-import { prepareEditTask as Wt, grid as gn, extendDragOptions as mn, isSegmentMoveAllowed as wn, DataStore as xn, normalizeLinks as pn, normalizeZoom as yn, defaultColumns as kn, parseTaskDates as Mt, defaultTaskTypes as bn, getToolbarButtons as St, isHandledAction as At, handleAction as Ot, getMenuOptions as Dt, getEditorItems as Tn } from "@svar-ui/gantt-store";
+import { prepareEditTask as Wt, grid as gn, extendDragOptions as mn, isSegmentMoveAllowed as wn, DataStore as xn, normalizeLinks as pn, normalizeZoom as yn, defaultColumns as kn, parseTaskDates as Mt, defaultTaskTypes as bn, getToolbarButtons as St, handleAction as At, isHandledAction as Ot, getMenuOptions as Dt, getEditorItems as Tn } from "@svar-ui/gantt-store";
 import { defaultColumns as _s, defaultEditorItems as Ps, defaultMenuOptions as Hs, defaultTaskTypes as Ws, defaultToolbarButtons as As, getEditorItems as Os, getMenuOptions as zs, getToolbarButtons as Gs, registerScaleUnit as Us } from "@svar-ui/gantt-store";
 import { useWritableProp as ut, useStore as Y, useStoreWithCounter as st, writable as vn, useStoreLater as Ye } from "@svar-ui/lib-react";
 import { hotkeys as zt } from "@svar-ui/grid-store";
@@ -1316,11 +1316,11 @@ function On(t) {
                         children: e.progress
                       }
                     ) : null,
-                    s ? /* @__PURE__ */ u(s, { data: e, api: r, onAction: wt }) : ee && e.segments ? /* @__PURE__ */ u(Pn, { task: e, type: mt(e.type) }) : /* @__PURE__ */ u("div", { className: "wx-GKbcLEGA wx-content", children: e.text || "" }),
+                    s ? /* @__PURE__ */ u(s, { data: e, api: r, onAction: wt }) : ee && e.segments ? /* @__PURE__ */ u(Pn, { task: e, type: mt(e.type) }) : /* @__PURE__ */ u("div", { className: "wx-GKbcLEGA wx-content", children: e.$barText || e.text || "" }),
                     c && /* @__PURE__ */ u("div", { className: "wx-GKbcLEGA wx-collision-warning", title: "This task overlaps with another task in the same row", children: "!" })
                   ] }) : /* @__PURE__ */ Pe(Je, { children: [
                     /* @__PURE__ */ u("div", { className: "wx-GKbcLEGA wx-content" }),
-                    s ? /* @__PURE__ */ u(s, { data: e, api: r, onAction: wt }) : /* @__PURE__ */ u("div", { className: "wx-GKbcLEGA wx-text-out", children: e.text })
+                    s ? /* @__PURE__ */ u(s, { data: e, api: r, onAction: wt }) : /* @__PURE__ */ u("div", { className: "wx-GKbcLEGA wx-text-out", children: e.$barText || e.text })
                   ] }),
                   n ? null : e.id === me?.target && me?.type[2] === "e" ? /* @__PURE__ */ u(
                     Tt,
@@ -1350,7 +1350,7 @@ function On(t) {
             {
               className: "wx-GKbcLEGA wx-bar wx-task wx-paste-preview",
               style: { left: w, top: T, width: R, height: L },
-              children: /* @__PURE__ */ u("div", { className: "wx-GKbcLEGA wx-content", children: e.text })
+              children: /* @__PURE__ */ u("div", { className: "wx-GKbcLEGA wx-content", children: e.$barText || e.text })
             },
             `preview-${c}`
           );
@@ -2287,7 +2287,7 @@ function Cs({ api: t = null, items: n = [] }) {
       splitTasks: r
     })).map((k) => {
       let d = { ...k, disabled: !1 };
-      return d.handler = At(F, d.id) ? (P) => Ot(t, P.id, null, o) : d.handler, d.text && (d.text = o(d.text)), d.menuText && (d.menuText = o(d.menuText)), d;
+      return d.handler = Ot(F, d.id) ? (P) => At(t, P.id, null, o) : d.handler, d.text && (d.text = o(d.text)), d.menuText && (d.menuText = o(d.menuText)), d;
     });
   }, [n, t, o, h, r]), K = C(() => {
     const F = [];
@@ -2366,7 +2366,7 @@ const $s = Pt(function({
   ), te = _(
     (E) => {
       const D = E.action;
-      D && (At(Z, D.id) && Ot(s, D.id, K.current, k), v && v(E));
+      D && (Ot(Z, D.id) && At(s, D.id, K.current, k), v && v(E));
     },
     [s, k, v, Z]
   ), ne = _(
