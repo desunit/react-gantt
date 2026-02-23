@@ -1281,7 +1281,7 @@ function On(t) {
         ),
         se.map((e) => {
           if (e.$skip && e.$skip_baseline) return null;
-          const c = Me.has(e.id), a = `wx-bar wx-${mt(e.type)}` + (Ie && Q && e.id === Q.id ? " wx-touch" : "") + (x && x.id === e.id ? " wx-selected" : "") + (Ae.has(e.id) ? " wx-selected" : "") + (ct(e.id) ? " wx-critical" : "") + (e.$reorder ? " wx-reorder-task" : "") + (ee && e.segments ? " wx-split" : "") + (c ? " wx-collision" : ""), w = "wx-link wx-left" + (x ? " wx-visible" : "") + (!x || !tt(e.id, !0) && xt(e.id) ? " wx-target" : "") + (x && x.id === e.id && x.start ? " wx-selected" : "") + (ct(e.id) ? " wx-critical" : ""), R = "wx-link wx-right" + (x ? " wx-visible" : "") + (!x || !tt(e.id, !1) && xt(e.id) ? " wx-target" : "") + (x && x.id === e.id && !x.start ? " wx-selected" : "") + (ct(e.id) ? " wx-critical" : "");
+          const c = Me.has(e.id), a = `wx-bar wx-${mt(e.type)}` + (e.$css ? ` ${e.$css}` : "") + (Ie && Q && e.id === Q.id ? " wx-touch" : "") + (x && x.id === e.id ? " wx-selected" : "") + (Ae.has(e.id) ? " wx-selected" : "") + (ct(e.id) ? " wx-critical" : "") + (e.$reorder ? " wx-reorder-task" : "") + (ee && e.segments ? " wx-split" : "") + (c ? " wx-collision" : ""), w = "wx-link wx-left" + (x ? " wx-visible" : "") + (!x || !tt(e.id, !0) && xt(e.id) ? " wx-target" : "") + (x && x.id === e.id && x.start ? " wx-selected" : "") + (ct(e.id) ? " wx-critical" : ""), R = "wx-link wx-right" + (x ? " wx-visible" : "") + (!x || !tt(e.id, !1) && xt(e.id) ? " wx-target" : "") + (x && x.id === e.id && !x.start ? " wx-selected" : "") + (ct(e.id) ? " wx-critical" : "");
           return /* @__PURE__ */ Pe(en, { children: [
             !e.$skip && /* @__PURE__ */ Pe(
               "div",

@@ -1369,6 +1369,7 @@ function Bars(props) {
         const isOverlapping = overlappingTaskIds.has(task.id);
         const barClass =
           `wx-bar wx-${taskTypeCss(task.type)}` +
+          (task.$css ? ` ${task.$css}` : '') +
           (touched && taskMove && task.id === taskMove.id ? ' wx-touch' : '') +
           (linkFrom && linkFrom.id === task.id ? ' wx-selected' : '') +
           (selectedIds.has(task.id) ? ' wx-selected' : '') +

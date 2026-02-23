@@ -8417,7 +8417,7 @@ function ld(t) {
         ),
         M.map((v) => {
           if (v.$skip && v.$skip_baseline) return null;
-          const D = Pe.has(v.id), A = `wx-bar wx-${Bt(v.type)}` + (ae && ue && v.id === ue.id ? " wx-touch" : "") + (L && L.id === v.id ? " wx-selected" : "") + (Ye.has(v.id) ? " wx-selected" : "") + (It(v.id) ? " wx-critical" : "") + (v.$reorder ? " wx-reorder-task" : "") + (N && v.segments ? " wx-split" : "") + (D ? " wx-collision" : ""), z = "wx-link wx-left" + (L ? " wx-visible" : "") + (!L || !Et(v.id, !0) && fn(v.id) ? " wx-target" : "") + (L && L.id === v.id && L.start ? " wx-selected" : "") + (It(v.id) ? " wx-critical" : ""), F = "wx-link wx-right" + (L ? " wx-visible" : "") + (!L || !Et(v.id, !1) && fn(v.id) ? " wx-target" : "") + (L && L.id === v.id && !L.start ? " wx-selected" : "") + (It(v.id) ? " wx-critical" : "");
+          const D = Pe.has(v.id), A = `wx-bar wx-${Bt(v.type)}` + (v.$css ? ` ${v.$css}` : "") + (ae && ue && v.id === ue.id ? " wx-touch" : "") + (L && L.id === v.id ? " wx-selected" : "") + (Ye.has(v.id) ? " wx-selected" : "") + (It(v.id) ? " wx-critical" : "") + (v.$reorder ? " wx-reorder-task" : "") + (N && v.segments ? " wx-split" : "") + (D ? " wx-collision" : ""), z = "wx-link wx-left" + (L ? " wx-visible" : "") + (!L || !Et(v.id, !0) && fn(v.id) ? " wx-target" : "") + (L && L.id === v.id && L.start ? " wx-selected" : "") + (It(v.id) ? " wx-critical" : ""), F = "wx-link wx-right" + (L ? " wx-visible" : "") + (!L || !Et(v.id, !1) && fn(v.id) ? " wx-target" : "") + (L && L.id === v.id && !L.start ? " wx-selected" : "") + (It(v.id) ? " wx-critical" : "");
           return /* @__PURE__ */ J(Ds, { children: [
             !v.$skip && /* @__PURE__ */ J(
               "div",
