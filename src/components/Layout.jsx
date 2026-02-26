@@ -22,6 +22,7 @@ function Layout(props) {
     readonly,
     cellBorders,
     highlightTime,
+    onScaleClick,
     onTableAPIChange,
     multiTaskRows = false,
     rowMapping = null,
@@ -349,6 +350,7 @@ function Layout(props) {
                 taskTemplate={taskTemplate}
                 cellBorders={cellBorders}
                 highlightTime={highlightTime}
+                onScaleClick={onScaleClick}
                 multiTaskRows={multiTaskRows}
                 rowMapping={computedRowMapping}
                 marqueeSelect={marqueeSelect}

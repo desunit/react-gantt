@@ -23,6 +23,7 @@ function Chart(props) {
     taskTemplate,
     cellBorders,
     highlightTime,
+    onScaleClick,
     multiTaskRows = false,
     rowMapping = null,
     marqueeSelect = false,
@@ -328,7 +329,7 @@ function Chart(props) {
       ref={chartRef}
       onScroll={onScroll}
     >
-      <TimeScales highlightTime={highlightTime} scales={scales} />
+      <TimeScales highlightTime={highlightTime} onScaleClick={onScaleClick} scales={scales} />
       {markers && markers.length ? (
         <div
           className="wx-mR7v2Xag wx-markers"

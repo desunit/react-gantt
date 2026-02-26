@@ -53,6 +53,7 @@ export declare const Gantt: FC<
     readonly?: boolean;
     cellBorders?: 'column' | 'full';
     highlightTime?: (date: Date, unit: 'day' | 'hour' | 'week') => string;
+    onScaleClick?: (date: Date, unit: string) => void;
     init?: (api: IApi) => void;
   } & IGanttConfig &
     GanttActions<TMethodsConfig>
