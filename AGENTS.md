@@ -488,6 +488,53 @@ const addCells = (date, cells, scales) => {
 <Gantt tasks={tasks} copyPaste={true} undo={true} />
 ```
 
+## onScaleClick Callback
+
+### Feature Description
+
+Fires when a user clicks a time scale header cell. Threaded through: Gantt → Layout → Chart → TimeScale.
+
+### Type
+
+```typescript
+onScaleClick?: (date: Date, unit: string, event?: MouseEvent) => void;
+```
+
+- `date` — cell start date (passed by store, may be local-time)
+- `unit` — scale unit: `'month'`, `'week'`, `'day'`, `'hour'`
+- `event` — native `MouseEvent` from the click (for target detection, positioning)
+
+### Implementation
+
+**TimeScale.jsx** — the only file with non-trivial logic:
+
+```jsx
+onClick={(e) => onScaleClick(cell.date, cell.unit, e.nativeEvent)}
+style={{ cursor: onScaleClick ? 'pointer' : undefined }}
+```
+
+### Files Modified
+
+- `types/index.d.ts` — added `onScaleClick` to Gantt FC props
+- `src/components/Gantt.jsx` — destructure prop, pass to Layout
+- `src/components/Layout.jsx` — forward to Chart
+- `src/components/chart/Chart.jsx` — forward to TimeScales
+- `src/components/chart/TimeScale.jsx` — onClick handler + cursor style
+
+### Usage
+
+```jsx
+<Gantt
+  onScaleClick={(date, unit, event) => {
+    if (unit === 'week') {
+      console.log('Clicked week starting', date);
+    }
+  }}
+/>
+```
+
+The consumer can use `highlightTime` alongside `onScaleClick` to visually mark selected columns.
+
 ## Development Patterns
 
 ### Adding New Features
@@ -608,6 +655,7 @@ Copy-paste relies on `getUTCDay()` to calculate day-of-week offsets. If dates ar
 ### The scales.start Alignment Fix
 
 The Gantt store (`@svar-ui/gantt-store`) processes the `start` prop and creates `scales.start`. This value has two problems:
+
 1. May be at local midnight (e.g., 21:00 UTC in UTC+3), not 00:00 UTC
 2. May not be on Monday (e.g., Sunday), breaking week-based calculations
 
@@ -617,11 +665,13 @@ The Gantt store (`@svar-ui/gantt-store`) processes the `start` prop and creates 
 const scalesValue = useMemo(() => {
   if (!scalesValueRaw?.start) return scalesValueRaw;
   // First normalize to UTC midnight
-  const utcDate = new Date(Date.UTC(
-    scalesValueRaw.start.getFullYear(),
-    scalesValueRaw.start.getMonth(),
-    scalesValueRaw.start.getDate()
-  ));
+  const utcDate = new Date(
+    Date.UTC(
+      scalesValueRaw.start.getFullYear(),
+      scalesValueRaw.start.getMonth(),
+      scalesValueRaw.start.getDate(),
+    ),
+  );
   // Then snap to Monday of that week (ISO week starts Monday)
   const dayOfWeek = utcDate.getUTCDay(); // 0=Sun, 1=Mon, ..., 6=Sat
   const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
@@ -632,6 +682,7 @@ const scalesValue = useMemo(() => {
 ```
 
 This ensures:
+
 - `pixelToDate()` returns Mondays for week-based calculations
 - `_startDayOfWeek` (0=Mon, 1=Tue, etc.) works correctly when added
 - Paste operations land in the correct visual column
@@ -675,7 +726,9 @@ const utc = (y, m, d) => new Date(Date.UTC(y, m, d));
 // Pixel to date - returns Monday of clicked week (UTC midnight)
 const pixelToDate = (px, scales) => {
   const units = Math.floor(px / scales.lengthUnitWidth);
-  const date = new Date(scales.start.getTime() + units * daysPerUnit * msPerDay);
+  const date = new Date(
+    scales.start.getTime() + units * daysPerUnit * msPerDay,
+  );
   date.setUTCHours(0, 0, 0, 0);
   return date;
 };
@@ -688,12 +741,12 @@ const addCells = (date, cells, scales) => {
 };
 
 // Copy handler - store day offset from Monday (Mon=0, Sun=6)
-const startDayOfWeek = task.start
-  ? (task.start.getUTCDay() + 6) % 7
-  : 0;
+const startDayOfWeek = task.start ? (task.start.getUTCDay() + 6) % 7 : 0;
 
 // Paste handler - add day offset to Monday to get correct start day
-const newStart = new Date(cellOffset.getTime() + (task._startDayOfWeek || 0) * msPerDay);
+const newStart = new Date(
+  cellOffset.getTime() + (task._startDayOfWeek || 0) * msPerDay,
+);
 ```
 
 ### Consumer Responsibility
