@@ -31,6 +31,7 @@ function Layout(props) {
     scrollToCurrentWeek = false,
     currentWeekColor = null,
     allowTaskIntersection = true,
+    summaryBarCounts = false,
   } = props;
 
   const api = useContext(storeContext);
@@ -358,6 +359,7 @@ function Layout(props) {
                 scrollToCurrentWeek={scrollToCurrentWeek}
                 currentWeekColor={currentWeekColor}
                 allowTaskIntersection={allowTaskIntersection}
+                summaryBarCounts={summaryBarCounts}
               />
             </div>
           </div>

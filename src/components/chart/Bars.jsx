@@ -83,6 +83,7 @@ function Bars(props) {
     marqueeSelect = false,
     copyPaste = false,
     allowTaskIntersection = true,
+    summaryBarCounts = false,
   } = props;
 
   const api = useContext(storeContext);
@@ -178,6 +179,49 @@ function Bars(props) {
     () => scalesValue.lengthUnit || 'day',
     [scalesValue],
   );
+
+  // Compute per-column child task counts for summary bars
+  const summaryColCounts = useMemo(() => {
+    if (!summaryBarCounts || !rTasksValue?.length || !lengthUnitWidth) return null;
+
+    // Build parent→children map
+    const childrenMap = new Map();
+    const summaryIds = new Set();
+    rTasksValue.forEach((task) => {
+      if (task.type === 'summary') {
+        summaryIds.add(task.id);
+      }
+      if (task.parent && task.parent !== 0 && task.type !== 'summary') {
+        if (!childrenMap.has(task.parent)) {
+          childrenMap.set(task.parent, []);
+        }
+        childrenMap.get(task.parent).push(task);
+      }
+    });
+
+    // For each summary, count children per column
+    const counts = new Map(); // summaryId → Map<colIndex, count>
+    summaryIds.forEach((summaryId) => {
+      const children = childrenMap.get(summaryId);
+      if (!children?.length) return;
+
+      const colCounts = new Map();
+      children.forEach((child) => {
+        if (child.$x == null || child.$w == null) return;
+        const startCol = Math.floor(child.$x / lengthUnitWidth);
+        const endCol = Math.ceil((child.$x + child.$w) / lengthUnitWidth);
+        for (let col = startCol; col < endCol; col++) {
+          colCounts.set(col, (colCounts.get(col) || 0) + 1);
+        }
+      });
+
+      if (colCounts.size > 0) {
+        counts.set(summaryId, colCounts);
+      }
+    });
+
+    return counts;
+  }, [summaryBarCounts, rTasksValue, lengthUnitWidth]);
 
   const ignoreNextClickRef = useRef(false);
 
@@ -1449,7 +1493,7 @@ function Bars(props) {
                       <BarSegments task={task} type={taskTypeCss(task.type)} />
                     ) : (
                       <div className="wx-GKbcLEGA wx-content">
-                        {task.$barText || task.text || ''}
+                        {summaryBarCounts && task.type === 'summary' ? '' : (task.$barText || task.text || '')}
                       </div>
                     )}
                     {isOverlapping && (
@@ -1457,6 +1501,37 @@ function Bars(props) {
                         !
                       </div>
                     )}
+                    {summaryColCounts && task.type === 'summary' && (() => {
+                      const colCounts = summaryColCounts.get(task.id);
+                      const startCol = Math.floor(task.$x / lengthUnitWidth);
+                      const endCol = Math.ceil((task.$x + task.$w) / lengthUnitWidth);
+                      return (
+                        <div className="wx-GKbcLEGA wx-summary-week-counts">
+                          {Array.from({ length: endCol - startCol }, (_, i) => {
+                            const col = startCol + i;
+                            const count = colCounts?.get(col) || 0;
+                            return (
+                              <span
+                                key={col}
+                                className={`wx-GKbcLEGA wx-week-count${count === 0 ? ' wx-week-count-zero' : ''}`}
+                                style={{
+                                  position: 'absolute',
+                                  left: `${col * lengthUnitWidth - task.$x}px`,
+                                  width: `${lengthUnitWidth}px`,
+                                  top: 0,
+                                  height: '100%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                }}
+                              >
+                                {count}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
                   </>
                 ) : (
                   <>

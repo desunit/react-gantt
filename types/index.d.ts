@@ -34,6 +34,8 @@ export interface IGanttConfig extends IConfig {
   scrollToCurrentWeek?: boolean;
   /** When false, prevents tasks from overlapping in the same row during drag/move, resize, and copy-paste. Default: true */
   allowTaskIntersection?: boolean;
+  /** Show per-column child task counts on summary bars */
+  summaryBarCounts?: boolean;
 }
 
 export interface IColumnConfig extends Omit<IGanttColumn, 'header'> {

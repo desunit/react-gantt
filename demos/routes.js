@@ -51,6 +51,7 @@ import GanttEditorReadonly from './cases/GanttEditorReadonly.jsx';
 import GanttEditorValidation from './cases/GanttEditorValidation.jsx';
 import GanttMultiTaskRows from './cases/GanttMultiTaskRows.jsx';
 import GanttMarqueeSelect from './cases/GanttMarqueeSelect.jsx';
+import GanttSummaryBarCounts from './cases/GanttSummaryBarCounts.jsx';
 
 export const links = [
   ['/base/:skin', 'Basic Gantt', BasicInit, 'BasicInit'],
@@ -94,6 +95,12 @@ export const links = [
     'Marquee selection & bulk move',
     GanttMarqueeSelect,
     'GanttMarqueeSelect',
+  ],
+  [
+    '/summary-bar-counts/:skin',
+    'Summary bar counts',
+    GanttSummaryBarCounts,
+    'GanttSummaryBarCounts',
   ],
 
   ['/zoom/:skin', 'Zoom', GanttZoom, 'GanttZoom'],

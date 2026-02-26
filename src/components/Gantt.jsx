@@ -96,6 +96,7 @@ const Gantt = forwardRef(function Gantt(
     currentWeekColor = null,
     scrollToCurrentWeek = false,
     allowTaskIntersection = true,
+    summaryBarCounts = false,
     ...restProps
   },
   ref,
@@ -390,6 +391,7 @@ const Gantt = forwardRef(function Gantt(
           scrollToCurrentWeek={scrollToCurrentWeek}
           currentWeekColor={currentWeekColor}
           allowTaskIntersection={allowTaskIntersection}
+          summaryBarCounts={summaryBarCounts}
         />
       </StoreContext.Provider>
     </context.i18n.Provider>

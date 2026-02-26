@@ -535,6 +535,71 @@ style={{ cursor: onScaleClick ? 'pointer' : undefined }}
 
 The consumer can use `highlightTime` alongside `onScaleClick` to visually mark selected columns.
 
+## Summary Bar Counts Feature
+
+### Feature Description
+
+Displays per-column child task counts directly on summary (project) bars. Each column of the summary bar shows how many child tasks overlap that column. Zeros are shown for empty columns (dimmed). The summary bar text (project name) is hidden when counts are active.
+
+### Implementation Strategy
+
+Prop-gated feature (`summaryBarCounts`), same threading pattern as `multiTaskRows`. Computation and rendering in Bars.jsx only — no store changes needed.
+
+### Implementation (Bars.jsx)
+
+**Computation** (`summaryColCounts` useMemo):
+```js
+// Map<summaryId, Map<colIndex, count>>
+// 1. Build parent→children map from rTasksValue
+// 2. For each child: startCol = floor($x / luw), endCol = ceil(($x+$w) / luw)
+// 3. Increment count for each column in [startCol, endCol)
+```
+
+**Rendering** (inside summary bar `<div>`, after content):
+- Iterates ALL columns spanned by the summary bar (startCol to endCol)
+- Each column rendered as absolutely positioned `<span>` at `left: (col * luw - task.$x)px`
+- Shows `0` with `.wx-week-count-zero` (50% opacity) for columns with no children
+- Summary bar text suppressed: `wx-content` renders empty string when feature is on
+
+### Key Design Decisions
+- **Text suppressed**: Summary bar hides project name text when counts are active (counts replace text)
+- **Zeros shown**: All columns in bar range show a count, including `0` (dimmed via opacity)
+- **Computed in Bars.jsx**: Needs `$x`/`$w` from store, avoids extra prop threading
+- **Works with any `lengthUnit`**: Uses `lengthUnitWidth` generically (week, day, month)
+- **`taskTemplate` compatible**: Counts render as sibling overlay div, unaffected by templates
+
+### CSS Classes
+```css
+.wx-summary-week-counts  /* Container: absolute, overflow: visible, pointer-events: none, z-index: 3 */
+.wx-week-count            /* Count span: 14px bold, white with text-shadow */
+.wx-week-count-zero       /* Zero counts: 50% opacity */
+```
+
+### Files Modified
+- `types/index.d.ts` — Added `summaryBarCounts?: boolean` to `IGanttConfig`
+- `src/components/Gantt.jsx` — Accept prop, pass to Layout
+- `src/components/Layout.jsx` — Forward to Chart
+- `src/components/chart/Chart.jsx` — Forward to Bars
+- `src/components/chart/Bars.jsx` — `summaryColCounts` useMemo + rendering in summary bars
+- `src/components/chart/Bars.css` — Overlay and count styling
+
+### Demo
+- Component: `demos/cases/GanttSummaryBarCounts.jsx`
+- Route: `/summary-bar-counts/:skin`
+- 2 projects (Alpha: 3 children, Beta: 2 children), overlapping date ranges
+- Uses `multiTaskRows + summaryBarCounts + lengthUnit="week"`
+
+### Usage
+```jsx
+<Gantt
+  tasks={tasks}
+  scales={scales}
+  lengthUnit="week"
+  multiTaskRows={true}
+  summaryBarCounts={true}
+/>
+```
+
 ## Development Patterns
 
 ### Adding New Features

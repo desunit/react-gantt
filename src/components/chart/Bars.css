@@ -311,6 +311,28 @@
   border-color: var(--wx-gantt-task-critical-color);
 }
 
+/* Summary bar week counts */
+.wx-summary-week-counts.wx-GKbcLEGA {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 3;
+}
+.wx-week-count.wx-GKbcLEGA {
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  user-select: none;
+}
+.wx-week-count-zero.wx-GKbcLEGA {
+  opacity: 0.5;
+}
+
 /* Marquee selection rectangle */
 .wx-marquee-selection.wx-GKbcLEGA {
   position: absolute;
