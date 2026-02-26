@@ -30,7 +30,7 @@ function TimeScale(props) {
                 className={'wx-ZkvhDKir ' + className}
                 style={{ width: `${cell.width}px`, cursor: onScaleClick ? 'pointer' : undefined }}
                 key={cellIdx}
-                onClick={onScaleClick ? () => onScaleClick(cell.date, cell.unit) : undefined}
+                onClick={onScaleClick ? (e) => onScaleClick(cell.date, cell.unit, e.nativeEvent) : undefined}
                 {...(isHtml ? { dangerouslySetInnerHTML: { __html: cell.value } } : { children: cell.value })}
               />
             );

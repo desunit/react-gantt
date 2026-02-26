@@ -8509,7 +8509,7 @@ function cd(t) {
           {
             className: "wx-ZkvhDKir " + d,
             style: { width: `${a.width}px`, cursor: n ? "pointer" : void 0 },
-            onClick: n ? () => n(a.date, a.unit) : void 0,
+            onClick: n ? (h) => n(a.date, a.unit, h.nativeEvent) : void 0,
             ...u ? { dangerouslySetInnerHTML: { __html: a.value } } : { children: a.value }
           },
           l
